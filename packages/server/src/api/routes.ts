@@ -166,16 +166,7 @@ export function createApiRouter(deps: ApiDeps): Router {
   router.get("/projects", (_req, res) => {
     try {
       const projects = store.getProjects();
-      const summaries: ProjectSummary[] = projects.map((p) => ({
-        id: p.id,
-        name: p.name,
-        path: p.path,
-        tools: p.tools,
-        sessionCount: p.sessionCount,
-        lastActivityAt: p.lastActivityAt,
-        isActive: p.isActive,
-      }));
-      res.json({ projects: summaries });
+      res.json({ projects });
     } catch (err) {
       res.status(500).json({ error: "Failed to load projects" });
     }

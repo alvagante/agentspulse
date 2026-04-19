@@ -240,8 +240,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - For all ToolIds, verify ToolTag uses correct color from TOOL_COLORS; for all SessionStatuses, verify correct indicator color; for all ArtifactCategories, verify correct label from ARTIFACT_CATEGORY_LABELS
     - **Validates: Requirements 15.1, 15.5, 17.7**
 
-- [ ] 8. Dashboard page
-  - [~] 8.1 Implement DashboardPage component
+- [x] 8. Dashboard page
+  - [x] 8.1 Implement DashboardPage component
     - 4 StatCards: active sessions, sessions this week, projects touched, tools detected
     - Active sessions list with title, ToolTag, project path, duration, tokens; links to session detail
     - Empty state "No sessions running" / "Start any agent in a project — it will show here."
@@ -254,8 +254,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate projects with varying `lastActivityAt`, verify dashboard shows exactly the 5 most recent in descending order (or all if fewer than 5)
     - **Validates: Requirements 4.5**
 
-- [ ] 9. Sessions page
-  - [~] 9.1 Implement SessionsPage with filter controls and three view modes
+- [x] 9. Sessions page
+  - [x] 9.1 Implement SessionsPage with filter controls and three view modes
     - Filter chips: tool (All + 9 tools), status (Active, Done, Error, Archived), date range (Today, 7d, 30d, All)
     - Grouped by Project view: sessions under project headings with name, count, path
     - Flat Table view: sortable columns (status, title, tool, project, status label, duration, tokens, started), pagination
@@ -265,8 +265,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Click session → navigate to Session Detail
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 16.3_
 
-- [ ] 10. Session Detail page
-  - [~] 10.1 Implement SessionDetailPage
+- [x] 10. Session Detail page
+  - [x] 10.1 Implement SessionDetailPage
     - Header: breadcrumbs, title, status chip, ToolTag, model, project path, start timestamp
     - Timeline of all events in chronological order: prompts, responses, tool calls, file edits with line counts, errors
     - DiffViewer for file edit events
@@ -287,8 +287,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate valid Session objects, verify all required fields are present in rendered output
     - **Validates: Requirements 6.1, 6.3, 6.4**
 
-- [ ] 11. Projects page
-  - [~] 11.1 Implement ProjectsPage with three view modes and Rescan
+- [x] 11. Projects page
+  - [x] 11.1 Implement ProjectsPage with three view modes and Rescan
     - Card Grid view: project cards with name, active/idle chip, path, ToolTags, session count, sessions this week, tokens, sparkline, last activity
     - Filesystem Tree view: projects grouped by parent directory in collapsible tree with tool badges and session counts
     - Table with Heatmap view: columns for name, path, tool indicators, 14-day sparkline, sessions, tokens, last activity
@@ -303,8 +303,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate projects with filesystem paths, verify tree groups by common parent, each project appears exactly once under correct parent
     - **Validates: Requirements 7.3**
 
-- [ ] 12. Project Detail page
-  - [~] 12.1 Implement ProjectDetailPage
+- [x] 12. Project Detail page
+  - [x] 12.1 Implement ProjectDetailPage
     - Header: breadcrumbs, project name, path, git branch/status, runtime/package manager
     - 4 StatCards: total sessions, tools used (with names), total tokens (with cost), net lines by agents
     - 30-day activity sparkline
@@ -316,8 +316,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Dependencies from package.json
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 17.5_
 
-- [ ] 13. User & System Config page
-  - [~] 13.1 Implement UserSystemPage with three view modes and Rescan
+- [x] 13. User & System Config page
+  - [x] 13.1 Implement UserSystemPage with three view modes and Rescan
     - Grouped by Tool view: one card per tool with ToolTag, home dir path, file count, file list with paths/sizes/view action; artifacts grouped by ArtifactCategory
     - File Tree + Viewer view: collapsible tree on left (grouped by home/system), CodeViewer on right showing file content with path, type, size, last-modified
     - Flat Searchable List view: filterable table (tool, path, type, size, last edited, view action) with filter chips for location (user home, system) and file type (json, yaml/toml, markdown)

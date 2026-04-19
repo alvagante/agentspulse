@@ -72,7 +72,7 @@ export interface SessionDetailResponse {
 }
 
 export interface ProjectListResponse {
-  projects: ProjectSummary[];
+  projects: Project[];
 }
 
 export interface ProjectDetailResponse {
