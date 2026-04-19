@@ -154,8 +154,8 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate plugins with declared categories and matching filesystem files, verify scanning returns artifacts for each category with files, and every artifact's category is in the plugin's declared set
     - **Validates: Requirements 17.3, 17.4, 17.5**
 
-- [ ] 5. API layer
-  - [~] 5.1 Create Express router in `packages/server/src/api/routes.ts` with all REST endpoints
+- [x] 5. API layer
+  - [x] 5.1 Create Express router in `packages/server/src/api/routes.ts` with all REST endpoints
     - `GET /api/dashboard` → DashboardResponse (stats, active sessions, recent projects, tool summaries)
     - `GET /api/sessions` → SessionListResponse (paginated, filterable by tool/status/dateRange/projectId)
     - `GET /api/sessions/:id` → SessionDetailResponse (full session with events, files, config, source paths)
@@ -170,7 +170,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - `GET /api/search` → SearchResponse (query: q)
     - _Requirements: 4.1–4.9, 5.1–5.9, 6.1–6.8, 7.1–7.7, 8.1–8.9, 9.1–9.7, 14.1–14.3_
 
-  - [~] 5.2 Wire API router into Express app in `packages/server/src/index.ts`
+  - [x] 5.2 Wire API router into Express app in `packages/server/src/index.ts`
     - Connect router to SessionStore, Scanner, ConfigViewer instances
     - Add error handling middleware (400, 404, 500)
     - Serve static SPA files from web build output
@@ -193,7 +193,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Test export JSON triggers correct content-type
     - _Requirements: 1.3, 14.1–14.3_
 
-- [ ] 6. Checkpoint — Backend complete
+- [-] 6. Checkpoint — Backend complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Frontend scaffolding and shared components
