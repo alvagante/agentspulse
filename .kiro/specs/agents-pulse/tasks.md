@@ -115,28 +115,28 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
 - [x] 3. Checkpoint — Core backend complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Plugin implementations
-  - [~] 4.1 Implement Claude Code plugin in `packages/server/src/plugins/claude-plugin.ts`
+- [x] 4. Plugin implementations
+  - [x] 4.1 Implement Claude Code plugin in `packages/server/src/plugins/claude-plugin.ts`
     - Config dirs: `.claude/`, home: `~/.claude/`, command: `claude`
     - Discover configs: `settings.json`, `CLAUDE.md`, `mcp.json`
     - Discover artifacts: agents/ (agents category), CLAUDE.md (steering)
     - Parse JSONL session files, extract all Session fields per Requirement 11.1
     - _Requirements: 2.1, 2.3, 11.1, 17.1, 17.3_
 
-  - [~] 4.2 Implement Kiro plugin in `packages/server/src/plugins/kiro-plugin.ts`
+  - [x] 4.2 Implement Kiro plugin in `packages/server/src/plugins/kiro-plugin.ts`
     - Config dirs: `.kiro/`, home: `~/.kiro/`, command: `kiro`
     - Discover configs: `config.yaml`, steering files, hooks
     - Discover artifacts: specs/ (steering), hooks (hooks), skills (agents)
     - Parse proprietary session format
     - _Requirements: 2.1, 2.3, 11.1, 17.1, 17.3_
 
-  - [~] 4.3 Implement remaining 7 tool plugins (Gemini, OpenCode, Continue, Codex, Cline, OpenClaw, NemoClaw)
+  - [x] 4.3 Implement remaining 7 tool plugins (Gemini, OpenCode, Continue, Codex, Cline, OpenClaw, NemoClaw)
     - Each plugin in its own file under `packages/server/src/plugins/`
     - Each implements `ToolPlugin` with correct paths, markers, config discovery, artifact categories
     - Session parsing can use simplified/stub logic initially — correct file discovery is the priority
     - _Requirements: 2.1, 2.3, 17.1_
 
-  - [~] 4.4 Create plugin barrel file `packages/server/src/plugins/index.ts` that instantiates all 9 plugins and exports a `registerAllPlugins(registry)` function
+  - [x] 4.4 Create plugin barrel file `packages/server/src/plugins/index.ts` that instantiates all 9 plugins and exports a `registerAllPlugins(registry)` function
     - _Requirements: 2.1, 2.4_
 
   - [ ]* 4.5 Write property test: Session parsing extracts all required fields (Property 10)
