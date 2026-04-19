@@ -11,7 +11,7 @@ function Layout() {
   return (
     <>
       <NavBar />
-      <main style={{ padding: "24px", maxWidth: 1200, margin: "0 auto" }}>
+      <main style={{ padding: "24px 32px" }}>
         <Outlet />
       </main>
     </>
