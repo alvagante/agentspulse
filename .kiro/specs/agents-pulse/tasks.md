@@ -193,29 +193,29 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Test export JSON triggers correct content-type
     - _Requirements: 1.3, 14.1–14.3_
 
-- [-] 6. Checkpoint — Backend complete
+- [x] 6. Checkpoint — Backend complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Frontend scaffolding and shared components
-  - [~] 7.1 Create app shell in `packages/web/src/App.tsx` with React Router routes
+- [x] 7. Frontend scaffolding and shared components
+  - [x] 7.1 Create app shell in `packages/web/src/App.tsx` with React Router routes
     - Routes: `/` → DashboardPage, `/sessions` → SessionsPage, `/sessions/:id` → SessionDetailPage, `/projects` → ProjectsPage, `/projects/:id` → ProjectDetailPage, `/user` → UserSystemPage
     - Layout component wrapping all routes
     - _Requirements: 4.1, 10.1_
 
-  - [~] 7.2 Implement NavBar component with persistent top bar
+  - [x] 7.2 Implement NavBar component with persistent top bar
     - Logo mark + "AgentsPulse" text
     - Nav links: Dashboard, Sessions, Projects, User & System with active state highlighting
     - Live session count badge
     - Global search input with Cmd+K / Ctrl+K keyboard shortcut
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [~] 7.3 Set up CSS design tokens and global styles
+  - [x] 7.3 Set up CSS design tokens and global styles
     - CSS custom properties matching wireframe: `--bg: #fafaf9`, `--panel: #fff`, font families (monospace + sans-serif per Req 15.2, 15.3), colors
     - Light theme per Requirement 15.4
     - Status indicator styles: active=green with pulse animation, done=dark gray, error=red per Requirement 15.5
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
 
-  - [~] 7.4 Implement shared UI components
+  - [x] 7.4 Implement shared UI components
     - `ToolTag` — colored square + tool name, using TOOL_COLORS constant
     - `StatCard` — large number, label, optional sub-label
     - `Sparkline` — compact bar chart with proportional-height spans (pure CSS)
@@ -228,7 +228,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - `SearchDialog` — modal overlay triggered by Cmd+K
     - _Requirements: 15.1, 15.5, 6.2, 6.7, 9.3, 16.1, 16.2, 16.3_
 
-  - [~] 7.5 Create API client module in `packages/web/src/api/client.ts`
+  - [x] 7.5 Create API client module in `packages/web/src/api/client.ts`
     - Typed fetch functions for all backend endpoints
     - Configure TanStack Query provider with stale time, refetch settings
     - Dashboard auto-refetch every 5 seconds
