@@ -324,16 +324,16 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Rescan button
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 17.4, 17.6_
 
-- [ ] 14. Checkpoint — Frontend pages complete
+- [x] 14. Checkpoint — Frontend pages complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Integration, wiring, and polish
-  - [~] 15.1 Wire Express server to serve built SPA static files and configure SPA fallback routing
+- [x] 15. Integration, wiring, and polish
+  - [x] 15.1 Wire Express server to serve built SPA static files and configure SPA fallback routing
     - Build web package, copy output to server's static directory
     - Add catch-all route for SPA client-side routing
     - _Requirements: 1.1_
 
-  - [~] 15.2 Implement startup sequence in `packages/server/src/index.ts`
+  - [x] 15.2 Implement startup sequence in `packages/server/src/index.ts`
     - Load config from `~/.agentspulse/config.json` (or defaults)
     - Initialize PluginRegistry with autodiscovery
     - Run initial full scan
@@ -341,7 +341,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Handle EADDRINUSE with non-zero exit
     - _Requirements: 1.1, 1.2, 1.3, 2.5, 2.6_
 
-  - [~] 15.3 Add npm scripts for development and production workflows
+  - [x] 15.3 Add npm scripts for development and production workflows
     - `dev` script for concurrent server + web dev mode
     - `build` script for production build
     - `start` script for production server
@@ -354,7 +354,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Rescan flow: trigger rescan, verify store updates
     - _Requirements: 3.1–3.6, 14.1–14.3_
 
-- [ ] 16. Final checkpoint — All tests pass
+- [-] 16. Final checkpoint — All tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
