@@ -1,0 +1,128 @@
+<!doctype html><html><head><meta charset="utf-8"><title>AgentsPulse — Dashboard</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="nav-root"></div>
+<main class="page">
+<div class="page-header"><div><div class="crumbs mono">~/.agentspulse / dashboard</div><h1>Dashboard</h1><div class="sub">Active AI agent sessions, projects and tools on this machine.</div></div><div class="row gap-8"><button>⟳ Rescan</button><button class="primary">+ New session</button></div></div>
+<div class="vtabs" data-group="dash"><button class="active" data-v="a">A · Live Ops</button><button data-v="b">B · 3-Up Grid</button><button data-v="c">C · Timeline First</button></div>
+<div data-vgroup="dash">
+
+<section class="variation active" data-v="a">
+<div class="vlabel">A — Active sessions dominate, live ops feel</div>
+<div class="grid g-4 mb-12">
+<div class="stat"><div class="n">3</div><div class="l">Active sessions</div><div class="sub">claude·2 · kiro·1</div></div>
+<div class="stat"><div class="n">24</div><div class="l">Sessions this week</div><div class="sub">+6 vs last wk</div></div>
+<div class="stat"><div class="n">12</div><div class="l">Projects touched</div><div class="sub">3 new</div></div>
+<div class="stat"><div class="n">9</div><div class="l">Tools detected</div><div class="sub">system + home</div></div>
+</div>
+<div class="card mb-12" data-when="populated">
+<div class="card-head"><h3>Active sessions <span class="dim text-xs">· auto-refresh 5s</span></h3><a href="sessions.html" class="more">View all →</a></div>
+<div class="list">
+<div class="list-row list-head" style="grid-template-columns:28px 1fr 120px 160px 110px 100px 40px"><span></span><span>Session</span><span>Tool</span><span>Project</span><span>Duration</span><span>Tokens</span><span></span></div>
+<div class="list-row" style="grid-template-columns:28px 1fr 120px 160px 110px 100px 40px"><span class="chip live" style="padding:2px"><span class="dot"></span></span><div><a href="session-detail.html" style="font-weight:500">Refactor auth middleware</a><div class="dim text-xs mono trunc">"…extract retry logic into its own module…"</div></div><span class="tool-tag" data-tool="claude"><span class="sq"></span>claude</span><span class="mono text-xs">~/work/api-gateway</span><span class="mono text-xs">18m 42s</span><span class="mono text-xs">124.3k</span><span class="dim">⋯</span></div>
+<div class="list-row" style="grid-template-columns:28px 1fr 120px 160px 110px 100px 40px"><span class="chip live" style="padding:2px"><span class="dot"></span></span><div><a href="session-detail.html" style="font-weight:500">Generate migration scripts</a><div class="dim text-xs mono trunc">"…target postgres 16, include down migrations…"</div></div><span class="tool-tag" data-tool="kiro"><span class="sq"></span>kiro</span><span class="mono text-xs">~/work/billing-svc</span><span class="mono text-xs">4m 11s</span><span class="mono text-xs">38.9k</span><span class="dim">⋯</span></div>
+<div class="list-row" style="grid-template-columns:28px 1fr 120px 160px 110px 100px 40px"><span class="chip live" style="padding:2px"><span class="dot"></span></span><div><a href="session-detail.html" style="font-weight:500">Explain chart regression</a><div class="dim text-xs mono trunc">"why did the 7d window render empty after…"</div></div><span class="tool-tag" data-tool="claude"><span class="sq"></span>claude</span><span class="mono text-xs">~/work/dash-web</span><span class="mono text-xs">1m 07s</span><span class="mono text-xs">9.2k</span><span class="dim">⋯</span></div>
+</div></div>
+<div class="card mb-12" data-when="empty"><div class="card-head"><h3>Active sessions</h3></div><div class="empty"><div class="big">No sessions running</div><div class="sm">Start any agent in a project — it will show here.</div></div></div>
+
+<div class="grid g-2 gap-16">
+<div class="card"><div class="card-head"><h3>Recent projects</h3><a href="projects.html" class="more">All 12 →</a></div>
+<div class="list">
+<div class="list-row" style="grid-template-columns:1fr auto auto"><div><a href="project-detail.html" style="font-weight:500">api-gateway</a><div class="dim text-xs mono trunc">~/work/api-gateway</div></div><div class="row gap-4"><span class="tool-tag" data-tool="claude"><span class="sq"></span></span><span class="tool-tag" data-tool="continue"><span class="sq"></span></span></div><span class="dim text-xs mono">2m</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto auto"><div><a href="project-detail.html" style="font-weight:500">billing-svc</a><div class="dim text-xs mono trunc">~/work/billing-svc</div></div><div class="row gap-4"><span class="tool-tag" data-tool="kiro"><span class="sq"></span></span><span class="tool-tag" data-tool="codex"><span class="sq"></span></span></div><span class="dim text-xs mono">5m</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto auto"><div><a href="project-detail.html" style="font-weight:500">dash-web</a><div class="dim text-xs mono trunc">~/work/dash-web</div></div><div class="row gap-4"><span class="tool-tag" data-tool="claude"><span class="sq"></span></span><span class="tool-tag" data-tool="gemini"><span class="sq"></span></span><span class="tool-tag" data-tool="cline"><span class="sq"></span></span></div><span class="dim text-xs mono">12m</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto auto"><div><a href="project-detail.html" style="font-weight:500">infra-terraform</a><div class="dim text-xs mono trunc">~/work/infra</div></div><div class="row gap-4"><span class="tool-tag" data-tool="opencode"><span class="sq"></span></span></div><span class="dim text-xs mono">2h</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto auto"><div><a href="project-detail.html" style="font-weight:500">notes-cli</a><div class="dim text-xs mono trunc">~/personal/notes-cli</div></div><div class="row gap-4"><span class="tool-tag" data-tool="openclaw"><span class="sq"></span></span><span class="tool-tag" data-tool="nemoclaw"><span class="sq"></span></span></div><span class="dim text-xs mono">yday</span></div>
+</div></div>
+
+<div class="card"><div class="card-head"><h3>User &amp; system config</h3><a href="user.html" class="more">View →</a></div>
+<div class="grid g-2 gap-8">
+<div class="tool-tag" data-tool="claude" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>claude-code</b></div><div class="dim text-xs">~/.claude · 4 files</div></div>
+<div class="tool-tag" data-tool="kiro" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>kiro</b></div><div class="dim text-xs">~/.kiro · 7 files</div></div>
+<div class="tool-tag" data-tool="gemini" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>gemini</b></div><div class="dim text-xs">~/.gemini · 2</div></div>
+<div class="tool-tag" data-tool="opencode" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>opencode</b></div><div class="dim text-xs">~/.opencode · 3</div></div>
+<div class="tool-tag" data-tool="continue" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>continue</b></div><div class="dim text-xs">~/.continue · 5</div></div>
+<div class="tool-tag" data-tool="codex" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>codex</b></div><div class="dim text-xs">~/.codex · 2</div></div>
+<div class="tool-tag" data-tool="cline" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>cline</b></div><div class="dim text-xs">~/.cline · 1</div></div>
+<div class="tool-tag" data-tool="openclaw" style="padding:8px;flex-direction:column;align-items:flex-start;gap:4px"><div class="row gap-4"><span class="sq"></span><b>openclaw</b></div><div class="dim text-xs">~/.openclaw · 3</div></div>
+</div></div>
+</div>
+</section>
+
+<section class="variation" data-v="b">
+<div class="vlabel">B — Balanced 3-up grid</div>
+<div class="grid g-3 gap-16">
+<div class="card"><div class="card-head"><h3>Sessions</h3><a href="sessions.html" class="more">→</a></div>
+<div class="row gap-8 mb-12"><div class="flex-1"><div class="text-xs dim">Active</div><div style="font-size:20px;font-weight:600">3</div></div><div class="flex-1"><div class="text-xs dim">Today</div><div style="font-size:20px;font-weight:600">8</div></div><div class="flex-1"><div class="text-xs dim">All time</div><div style="font-size:20px;font-weight:600">246</div></div></div>
+<div class="spark mb-12"><span style="height:30%"></span><span style="height:50%"></span><span style="height:20%"></span><span style="height:70%"></span><span style="height:45%"></span><span style="height:85%"></span><span style="height:60%"></span><span style="height:40%"></span><span style="height:75%"></span><span style="height:55%"></span><span style="height:90%"></span><span style="height:65%"></span><span style="height:100%"></span><span style="height:50%"></span></div>
+<div class="list" data-when="populated">
+<div class="list-row" style="grid-template-columns:8px 1fr auto"><span class="chip live" style="padding:2px"><span class="dot"></span></span><a href="session-detail.html" class="trunc">Refactor auth middleware</a><span class="tool-tag" data-tool="claude"><span class="sq"></span></span></div>
+<div class="list-row" style="grid-template-columns:8px 1fr auto"><span class="chip live" style="padding:2px"><span class="dot"></span></span><a href="session-detail.html" class="trunc">Migration scripts</a><span class="tool-tag" data-tool="kiro"><span class="sq"></span></span></div>
+<div class="list-row" style="grid-template-columns:8px 1fr auto"><span class="chip done" style="padding:2px"><span class="dot"></span></span><a href="session-detail.html" class="trunc">Explain regression</a><span class="tool-tag" data-tool="claude"><span class="sq"></span></span></div>
+<div class="list-row" style="grid-template-columns:8px 1fr auto"><span class="chip done" style="padding:2px"><span class="dot"></span></span><a href="session-detail.html" class="trunc">Add OpenAPI specs</a><span class="tool-tag" data-tool="opencode"><span class="sq"></span></span></div>
+</div>
+<div class="empty" data-when="empty"><div class="big">No sessions</div></div></div>
+
+<div class="card"><div class="card-head"><h3>Projects</h3><a href="projects.html" class="more">→</a></div>
+<div class="row gap-8 mb-12"><div class="flex-1"><div class="text-xs dim">Total</div><div style="font-size:20px;font-weight:600">12</div></div><div class="flex-1"><div class="text-xs dim">Active today</div><div style="font-size:20px;font-weight:600">5</div></div><div class="flex-1"><div class="text-xs dim">w/ CLAUDE.md</div><div style="font-size:20px;font-weight:600">7</div></div></div>
+<div class="box mb-12" style="min-height:70px;flex-direction:column;gap:6px"><div>[ tool distribution ]</div><div style="display:flex;gap:2px;width:100%;max-width:220px"><div style="flex:7;height:10px;background:#b8693a"></div><div style="flex:3;height:10px;background:#3a6b8a"></div><div style="flex:2;height:10px;background:#6a5a8a"></div><div style="flex:2;height:10px;background:#3a8a6a"></div></div></div>
+<div class="list" data-when="populated">
+<div class="list-row" style="grid-template-columns:1fr auto"><a href="project-detail.html" class="trunc">api-gateway</a><span class="dim text-xs mono">42</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto"><a href="project-detail.html" class="trunc">billing-svc</a><span class="dim text-xs mono">28</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto"><a href="project-detail.html" class="trunc">dash-web</a><span class="dim text-xs mono">19</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto"><a href="project-detail.html" class="trunc">infra-terraform</a><span class="dim text-xs mono">11</span></div>
+</div>
+<div class="empty" data-when="empty"><div class="big">No projects</div></div></div>
+
+<div class="card"><div class="card-head"><h3>User &amp; System</h3><a href="user.html" class="more">→</a></div>
+<div class="row gap-8 mb-12"><div class="flex-1"><div class="text-xs dim">Tools</div><div style="font-size:20px;font-weight:600">9</div></div><div class="flex-1"><div class="text-xs dim">Configs</div><div style="font-size:20px;font-weight:600">29</div></div><div class="flex-1"><div class="text-xs dim">MCP</div><div style="font-size:20px;font-weight:600">6</div></div></div>
+<div class="box mb-12" style="min-height:70px">[ ~/ · config heatmap ]</div>
+<div class="list" data-when="populated">
+<div class="list-row" style="grid-template-columns:auto 1fr auto"><span class="tool-tag" data-tool="claude"><span class="sq"></span>claude</span><span class="mono text-xs trunc dim">~/.claude/settings.json</span><span class="dim text-xs mono">4</span></div>
+<div class="list-row" style="grid-template-columns:auto 1fr auto"><span class="tool-tag" data-tool="kiro"><span class="sq"></span>kiro</span><span class="mono text-xs trunc dim">~/.kiro/config.yaml</span><span class="dim text-xs mono">7</span></div>
+<div class="list-row" style="grid-template-columns:auto 1fr auto"><span class="tool-tag" data-tool="continue"><span class="sq"></span>continue</span><span class="mono text-xs trunc dim">~/.continue/config.json</span><span class="dim text-xs mono">5</span></div>
+<div class="list-row" style="grid-template-columns:auto 1fr auto"><span class="tool-tag" data-tool="gemini"><span class="sq"></span>gemini</span><span class="mono text-xs trunc dim">~/.gemini/settings.json</span><span class="dim text-xs mono">2</span></div>
+</div></div>
+</div>
+</section>
+
+<section class="variation" data-v="c">
+<div class="vlabel">C — Unified activity timeline + right rail</div>
+<div class="grid g-rail gap-16">
+<div class="card">
+<div class="card-head"><h3>Activity · last 24h</h3><div class="row gap-4"><span class="chip active"><span class="dot"></span>All</span><span class="chip">claude</span><span class="chip">kiro</span><span class="chip dim">+7</span></div></div>
+<div class="timeline" data-when="populated">
+<div class="tl-row prompt"><span class="tl-time">14:22</span> · <span class="tl-title">claude · api-gateway</span><div class="tl-body mono trunc">"refactor auth middleware, retries as own module"</div></div>
+<div class="tl-row"><span class="tl-time">14:22</span> · <span class="tl-title">tool · Read</span><div class="tl-body mono">middleware/auth.ts (312 lines)</div></div>
+<div class="tl-row edit"><span class="tl-time">14:24</span> · <span class="tl-title">edit · middleware/retry.ts</span><div class="tl-body mono">+84 / −0 — new file</div></div>
+<div class="tl-row edit"><span class="tl-time">14:24</span> · <span class="tl-title">edit · middleware/auth.ts</span><div class="tl-body mono">+12 / −41</div></div>
+<div class="tl-row"><span class="tl-time">14:25</span> · <span class="tl-title">tool · Bash</span><div class="tl-body mono">pnpm test -- --run middleware</div></div>
+<div class="tl-row prompt"><span class="tl-time">14:31</span> · <span class="tl-title">kiro · billing-svc</span><div class="tl-body mono trunc">"generate postgres 16 migrations w/ down scripts"</div></div>
+<div class="tl-row edit"><span class="tl-time">14:33</span> · <span class="tl-title">edit · migrations/0014_subscriptions.sql</span><div class="tl-body mono">+62 / −0</div></div>
+<div class="tl-row err"><span class="tl-time">14:34</span> · <span class="tl-title">error · continue · dash-web</span><div class="tl-body mono">model timeout — retrying (1/3)</div></div>
+<div class="tl-row prompt"><span class="tl-time">14:36</span> · <span class="tl-title">claude · dash-web</span><div class="tl-body mono trunc">"why did 7d window render empty after tz fix?"</div></div>
+</div>
+<div class="empty" data-when="empty"><div class="big">No recent activity</div></div>
+</div>
+<div>
+<div class="card mb-12"><div class="card-head"><h3>Right now</h3><span class="chip live"><span class="dot"></span>live</span></div>
+<div class="list">
+<div class="list-row" style="grid-template-columns:1fr auto;padding:8px 0"><div><div style="font-weight:500"><a href="session-detail.html">Refactor auth</a></div><div class="dim text-xs mono">claude · api-gateway</div></div><div class="bar-track" style="width:60px"><div class="bar-fill" style="width:72%"></div></div></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:8px 0"><div><div style="font-weight:500"><a href="session-detail.html">Migrations</a></div><div class="dim text-xs mono">kiro · billing-svc</div></div><div class="bar-track" style="width:60px"><div class="bar-fill" style="width:28%"></div></div></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:8px 0"><div><div style="font-weight:500"><a href="session-detail.html">Chart regression</a></div><div class="dim text-xs mono">claude · dash-web</div></div><div class="bar-track" style="width:60px"><div class="bar-fill" style="width:10%"></div></div></div>
+</div></div>
+<div class="card mb-12"><div class="card-head"><h3>Top projects · 7d</h3></div><div class="list">
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><a href="project-detail.html" class="trunc">api-gateway</a><div class="bar-track" style="width:80px"><div class="bar-fill" style="width:90%"></div></div></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><a href="project-detail.html" class="trunc">billing-svc</a><div class="bar-track" style="width:80px"><div class="bar-fill" style="width:62%"></div></div></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><a href="project-detail.html" class="trunc">dash-web</a><div class="bar-track" style="width:80px"><div class="bar-fill" style="width:40%"></div></div></div>
+</div></div>
+<div class="card"><div class="card-head"><h3>Tools detected</h3><a href="user.html" class="more">→</a></div>
+<div class="row wrap gap-4">
+<span class="tool-tag" data-tool="claude"><span class="sq"></span>claude</span><span class="tool-tag" data-tool="kiro"><span class="sq"></span>kiro</span><span class="tool-tag" data-tool="gemini"><span class="sq"></span>gemini</span><span class="tool-tag" data-tool="opencode"><span class="sq"></span>opencode</span><span class="tool-tag" data-tool="continue"><span class="sq"></span>continue</span><span class="tool-tag" data-tool="codex"><span class="sq"></span>codex</span><span class="tool-tag" data-tool="cline"><span class="sq"></span>cline</span><span class="tool-tag" data-tool="openclaw"><span class="sq"></span>openclaw</span><span class="tool-tag" data-tool="nemoclaw"><span class="sq"></span>nemoclaw</span>
+</div></div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script src="shared.js"></script>
+<script>renderNav('dashboard');</script>
+</body></html>

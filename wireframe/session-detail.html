@@ -1,0 +1,177 @@
+<!doctype html><html><head><meta charset="utf-8"><title>AgentsPulse — Session</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="nav-root"></div>
+<main class="page">
+<div class="page-header"><div><div class="crumbs mono"><a href="sessions.html">sessions</a> / <a href="project-detail.html">api-gateway</a> / ses_01HWVZ8K…</div><h1>Refactor auth middleware</h1>
+<div class="sub row gap-8" style="margin-top:6px"><span class="chip live"><span class="dot"></span>Running · 18m 42s</span><span class="tool-tag" data-tool="claude"><span class="sq"></span>claude · sonnet-4.5</span><span class="mono text-xs dim">~/work/api-gateway</span><span class="mono text-xs dim">Apr 18 14:22</span></div>
+</div><div class="row gap-8"><button>⇣ Export JSON</button><button>◻ Open in tool</button><button>⏹ Stop</button></div></div>
+<div class="vtabs" data-group="sd"><button class="active" data-v="a">A · Unified Timeline</button><button data-v="b">B · Split 3-Pane</button><button data-v="c">C · Tabbed Workspace</button></div>
+<div data-vgroup="sd">
+
+<section class="variation active" data-v="a">
+<div class="vlabel">A — Chronological timeline mixing prompts, tools, edits, errors</div>
+<div class="grid g-rail gap-16">
+<div>
+<div class="card mb-12"><div class="card-head"><h3>Full timeline</h3><div class="row gap-4"><span class="chip active">All</span><span class="chip">Prompts</span><span class="chip">Tools</span><span class="chip">Edits</span><span class="chip">Errors</span></div></div>
+<div class="timeline">
+<div class="tl-row prompt"><span class="tl-time">14:22:07</span> · <span class="tl-title">user prompt</span><div class="tl-body mono">"Refactor the auth middleware so retries live in their own module."</div></div>
+<div class="tl-row"><span class="tl-time">14:22:11</span> · <span class="tl-title">tool · Read</span><div class="tl-body mono">middleware/auth.ts (312 lines)</div></div>
+<div class="tl-row"><span class="tl-time">14:22:13</span> · <span class="tl-title">tool · Grep</span><div class="tl-body mono">"retry" · 4 matches</div></div>
+<div class="tl-row"><span class="tl-time">14:22:20</span> · <span class="tl-title">assistant</span><div class="tl-body">Plan: extract retry logic into middleware/retry.ts.</div></div>
+<div class="tl-row edit"><span class="tl-time">14:23:48</span> · <span class="tl-title">edit · middleware/retry.ts</span><div class="tl-body mono">+84 / −0 — new file</div></div>
+<div class="tl-row edit"><span class="tl-time">14:24:11</span> · <span class="tl-title">edit · middleware/auth.ts</span><div class="tl-body mono">+12 / −41</div></div>
+<div class="tl-row"><span class="tl-time">14:24:38</span> · <span class="tl-title">tool · Bash</span><div class="tl-body mono">pnpm test -- --run middleware</div></div>
+<div class="tl-row err"><span class="tl-time">14:25:02</span> · <span class="tl-title">error · 2 tests failed</span><div class="tl-body mono">retry.test.ts "retries 3 times on 503"</div></div>
+<div class="tl-row prompt"><span class="tl-time">14:26:15</span> · <span class="tl-title">user prompt</span><div class="tl-body mono">"Fix it, tests must pass."</div></div>
+<div class="tl-row edit"><span class="tl-time">14:27:44</span> · <span class="tl-title">edit · middleware/retry.ts</span><div class="tl-body mono">+8 / −3</div></div>
+<div class="tl-row"><span class="tl-time">14:28:02</span> · <span class="tl-title">tool · Bash</span><div class="tl-body mono">pnpm test · all 42 ✓</div></div>
+</div></div>
+<div class="card"><div class="card-head"><h3>Diff · middleware/retry.ts</h3><span class="dim text-xs mono">+84 / −0</span></div>
+<div class="diff">
+<div class="d-line d-add"><span class="ln">1</span>import type { Request, Response, NextFunction } from 'express';</div>
+<div class="d-line d-add"><span class="ln">2</span>export interface RetryOptions {</div>
+<div class="d-line d-add"><span class="ln">3</span>  max: number;</div>
+<div class="d-line d-add"><span class="ln">4</span>  backoffMs: number;</div>
+<div class="d-line d-add"><span class="ln">5</span>  retryOn: number[];</div>
+<div class="d-line d-add"><span class="ln">6</span>}</div>
+<div class="d-line d-add"><span class="ln">7</span>export function withRetry(opts: RetryOptions) {</div>
+<div class="d-line d-add"><span class="ln">8</span>  return async (req, res, next) =&gt; { /* … */ };</div>
+<div class="d-line d-add"><span class="ln">9</span>}</div>
+</div></div>
+</div>
+<div>
+<div class="card mb-12"><div class="card-head"><h3>Overview</h3></div><div class="list">
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Model</span><span class="mono text-xs">sonnet-4.5</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Tokens</span><span class="mono text-xs">124.3k / 200k</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Cost</span><span class="mono text-xs">$0.38</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Duration</span><span class="mono text-xs">18m 42s</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Messages</span><span class="mono text-xs">14</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Tool calls</span><span class="mono text-xs">9</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Files</span><span class="mono text-xs">4</span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="dim">Net</span><span class="mono text-xs">+104 / −44</span></div>
+</div></div>
+<div class="card mb-12"><div class="card-head"><h3>Files modified</h3></div><div class="list">
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="mono text-xs trunc">middleware/retry.ts</span><span class="mono text-xs"><span style="color:var(--ok)">+84</span></span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="mono text-xs trunc">middleware/auth.ts</span><span class="mono text-xs"><span style="color:var(--ok)">+12</span> <span style="color:var(--err)">−41</span></span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="mono text-xs trunc">middleware/retry.test.ts</span><span class="mono text-xs"><span style="color:var(--ok)">+56</span> <span style="color:var(--err)">−3</span></span></div>
+<div class="list-row" style="grid-template-columns:1fr auto;padding:6px 0"><span class="mono text-xs trunc">index.ts</span><span class="mono text-xs"><span style="color:var(--ok)">+2</span></span></div>
+</div></div>
+<div class="card mb-12"><div class="card-head"><h3>Source files</h3></div>
+<div class="list">
+<div class="list-row mono text-xs" style="grid-template-columns:1fr;padding:4px 0">~/.claude/projects/api-gateway/sessions/ses_01HWVZ8K.jsonl</div>
+<div class="list-row mono text-xs" style="grid-template-columns:1fr;padding:4px 0">~/.claude/projects/api-gateway/sessions/ses_01HWVZ8K.meta.json</div>
+<div class="list-row mono text-xs" style="grid-template-columns:1fr;padding:4px 0">.claude/agents/auth-refactor.md</div>
+</div></div>
+<div class="card"><div class="card-head"><h3>Config used</h3></div>
+<div class="codeblock">{
+  "model": "sonnet-4.5",
+  "max_tokens": 200000,
+  "tools": ["Read","Edit",
+    "Grep","Bash","Glob"],
+  "systemPrompt":
+    ".claude/CLAUDE.md"
+}</div></div>
+</div>
+</div>
+</section>
+
+<section class="variation" data-v="b">
+<div class="vlabel">B — 3-pane: transcript · tool calls · diff</div>
+<div class="grid gap-12" style="grid-template-columns:1.1fr .9fr 1.1fr">
+<div class="card"><div class="card-head"><h3>Transcript</h3><span class="dim text-xs mono">14 msgs</span></div>
+<div style="font-size:13px;line-height:1.55">
+<div class="mb-12"><div class="text-xs dim mono mb-8">USER · 14:22:07</div><div style="padding:8px 10px;background:var(--panel-2);border-radius:4px">Refactor the auth middleware so retries live in their own module.</div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">ASSISTANT · 14:22:20</div><div>Plan: extract retry into <span class="mono">middleware/retry.ts</span>. I'll read the current file.</div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">ASSISTANT · 14:24:50</div><div>Created retry.ts and trimmed auth.ts. Running tests.</div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">USER · 14:26:15</div><div style="padding:8px 10px;background:var(--panel-2);border-radius:4px">Fix it, tests must pass.</div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">ASSISTANT · 14:40:49</div><div>Done. 42/42 green.</div></div>
+</div></div>
+<div class="card"><div class="card-head"><h3>Tool calls · 9</h3></div><div class="list">
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Read</span><span class="mono text-xs trunc">middleware/auth.ts</span><span class="dim text-xs mono">312L</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Grep</span><span class="mono text-xs trunc">"retry"</span><span class="dim text-xs mono">4</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Write</span><span class="mono text-xs trunc">middleware/retry.ts</span><span class="dim text-xs mono">84L</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Edit</span><span class="mono text-xs trunc">middleware/auth.ts</span><span class="dim text-xs mono">+12/−41</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Bash</span><span class="mono text-xs trunc">pnpm test</span><span class="text-xs mono" style="color:var(--err)">fail</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Edit</span><span class="mono text-xs trunc">middleware/retry.ts</span><span class="dim text-xs mono">+8/−3</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Bash</span><span class="mono text-xs trunc">pnpm test</span><span class="text-xs mono" style="color:var(--ok)">pass</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Write</span><span class="mono text-xs trunc">retry.test.ts</span><span class="dim text-xs mono">56L</span></div>
+<div class="list-row" style="grid-template-columns:60px 1fr auto;padding:7px 0"><span class="tool-tag" style="justify-content:center">Edit</span><span class="mono text-xs trunc">index.ts</span><span class="dim text-xs mono">+2</span></div>
+</div></div>
+<div class="card"><div class="card-head"><h3>Diff · auth.ts</h3><span class="dim text-xs mono">+12 / −41</span></div>
+<div class="diff">
+<div class="d-line d-del"><span class="ln">19</span>import { sleep } from '../utils/sleep';</div>
+<div class="d-line d-add"><span class="ln">19</span>import { withRetry } from './retry';</div>
+<div class="d-line d-del"><span class="ln">21</span>const MAX_RETRIES = 3;</div>
+<div class="d-line d-del"><span class="ln">22</span>const BACKOFF = 400;</div>
+<div class="d-line d-ctx"><span class="ln">23</span>export function auth(req, res, next) {</div>
+<div class="d-line d-del"><span class="ln">24</span>  let attempts = 0;</div>
+<div class="d-line d-del"><span class="ln">25</span>  while (attempts++ &lt; MAX_RETRIES) {</div>
+<div class="d-line d-add"><span class="ln">24</span>  return withRetry({max:3,backoffMs:400,retryOn:[503]})(</div>
+<div class="d-line d-add"><span class="ln">25</span>    verifyToken</div>
+<div class="d-line d-add"><span class="ln">26</span>  )(req, res, next);</div>
+<div class="d-line d-ctx"><span class="ln">29</span>}</div>
+</div></div>
+</div>
+</section>
+
+<section class="variation" data-v="c">
+<div class="vlabel">C — Tabbed workspace</div>
+<div class="grid g-4 gap-12 mb-12">
+<div class="stat"><div class="n">18m</div><div class="l">Duration</div></div>
+<div class="stat"><div class="n">124k</div><div class="l">Tokens</div></div>
+<div class="stat"><div class="n">9</div><div class="l">Tool calls</div></div>
+<div class="stat"><div class="n">+104</div><div class="l">Net lines</div></div>
+</div>
+<div class="card">
+<div class="row gap-0 mb-12" style="border-bottom:1px solid var(--line)">
+<div style="padding:8px 14px;border-bottom:2px solid var(--ink);font-weight:500">Chat</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Timeline</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Files (4)</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Diff</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Tool calls (9)</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Config</div>
+<div style="padding:8px 14px;color:var(--ink-3)">Raw JSONL</div>
+</div>
+<div class="grid g-2 gap-16">
+<div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">USER · 14:22:07</div><div style="padding:10px 12px;background:var(--panel-2);border-radius:4px">Refactor the auth middleware so retries live in their own module.</div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">ASSISTANT · 14:22:20</div><div>Plan: extract retry logic into <span class="mono">middleware/retry.ts</span>.</div>
+<div class="mt-8" style="border-left:2px solid var(--line);padding-left:10px;font-size:12px;color:var(--ink-3)">
+<div>↳ <span class="mono">Read middleware/auth.ts</span></div>
+<div>↳ <span class="mono">Grep "retry" → 4 hits</span></div></div></div>
+<div class="mb-12"><div class="text-xs dim mono mb-8">ASSISTANT · 14:24:50</div><div>Created retry.ts and trimmed auth.ts. Running tests.</div>
+<div class="mt-8" style="border-left:2px solid var(--line);padding-left:10px;font-size:12px;color:var(--ink-3)">
+<div>↳ <span class="mono">Write retry.ts (+84)</span></div>
+<div>↳ <span class="mono">Edit auth.ts (+12 −41)</span></div>
+<div>↳ <span class="mono">Bash pnpm test → <span style="color:var(--err)">2 failed</span></span></div></div></div>
+</div>
+<div>
+<div class="card" style="background:var(--panel-2);padding:12px"><div class="text-xs dim mono mb-8">FILES PANEL</div>
+<div class="tree">
+<div class="t-row"><span class="t-caret">▾</span><span class="t-name">middleware/</span></div>
+<div class="t-row" style="padding-left:18px"><span class="t-caret">·</span><span class="t-name">auth.ts</span><span class="t-tool">+12 −41</span></div>
+<div class="t-row sel" style="padding-left:18px"><span class="t-caret">·</span><span class="t-name">retry.ts</span><span class="t-tool">new +84</span></div>
+<div class="t-row" style="padding-left:18px"><span class="t-caret">·</span><span class="t-name">retry.test.ts</span><span class="t-tool">+56 −3</span></div>
+<div class="t-row"><span class="t-caret">·</span><span class="t-name">index.ts</span><span class="t-tool">+2</span></div>
+</div></div>
+<div class="card mt-12" style="background:var(--panel-2);padding:12px"><div class="text-xs dim mono mb-8">CONFIG</div>
+<div class="codeblock" style="background:var(--panel)">{
+  "agent": ".claude/agents/auth-refactor.md",
+  "model": "sonnet-4.5",
+  "mcp": ["filesystem","git"],
+  "tools": ["Read","Write","Edit","Grep","Bash"]
+}</div></div>
+<div class="card mt-12" style="background:var(--panel-2);padding:12px"><div class="text-xs dim mono mb-8">RAW JSONL</div>
+<div class="codeblock" style="background:var(--panel);font-size:10px">{"type":"user","ts":"14:22:07","text":"Refactor…"}
+{"type":"assistant","ts":"14:22:20","text":"Plan…"}
+{"type":"tool_use","tool":"Read","path":"middleware/auth.ts"}
+{"type":"tool_result","lines":312}
+{"type":"tool_use","tool":"Grep","pattern":"retry"}
+…</div></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script src="shared.js"></script><script>renderNav('sessions');</script>
+</body></html>
