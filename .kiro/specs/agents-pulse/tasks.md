@@ -35,18 +35,18 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Define `ARTIFACT_CATEGORY_LABELS` map per Requirement 17.7
     - _Requirements: 15.1, 17.7_
 
-- [ ] 2. Core backend — Plugin interface, registry, and scanner infrastructure
-  - [~] 2.1 Define the `ToolPlugin` interface in `packages/server/src/plugins/plugin-interface.ts`
+- [x] 2. Core backend — Plugin interface, registry, and scanner infrastructure
+  - [x] 2.1 Define the `ToolPlugin` interface in `packages/server/src/plugins/plugin-interface.ts`
     - Interface with: `id`, `displayName`, `color`, `detectionMethod`, `artifactCategories`, `configDirNames`, `commandNames`, `systemPaths`
     - Methods: `detect()`, `discoverConfigs(scope)`, `discoverArtifacts(scope)`, `parseSessions(projectPath)`, `parseSessionFile(filePath)`
     - _Requirements: 2.3, 2.7, 17.1, 17.2_
 
-  - [~] 2.2 Implement `PluginRegistry` in `packages/server/src/plugins/plugin-registry.ts`
+  - [x] 2.2 Implement `PluginRegistry` in `packages/server/src/plugins/plugin-registry.ts`
     - `register(plugin)`, `getPlugins()`, `getPlugin(id)`, `getDetectedCount()`
     - `autodiscover()` method that checks config dirs (`~/{configDirName}`) and PATH commands (`which`/`where`) for each plugin, sets `detectionMethod` accordingly
     - _Requirements: 2.1, 2.4, 2.5, 2.6, 2.7_
 
-  - [~] 2.3 Implement `SessionStore` in `packages/server/src/store/session-store.ts`
+  - [x] 2.3 Implement `SessionStore` in `packages/server/src/store/session-store.ts`
     - `update(result)` to replace all data from a ScanResult
     - `getSessions(filter)` with filtering by tool, status, dateRange, search, sorting, and pagination
     - `getSession(id)`, `getProjects()`, `getProject(identifier)`, `getConfigs(scope?)`, `getArtifacts(filter?)`, `getDashboardStats()`, `getLastScanTime()`
@@ -72,7 +72,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate random sessions and sort params, verify ordering is consistent with sort criteria
     - **Validates: Requirements 5.6**
 
-  - [~] 2.8 Implement `ProjectDetector` in `packages/server/src/scanner/project-detector.ts`
+  - [x] 2.8 Implement `ProjectDetector` in `packages/server/src/scanner/project-detector.ts`
     - `detectProjects(roots)` — walk each root, check for tool marker subdirectories
     - `isProject(dirPath)` — check if directory contains at least one marker
     - `extractGitInfo(projectPath)` — run git commands via `child_process`
@@ -89,12 +89,12 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate valid `package.json` with random dependencies/devDependencies, verify extracted list matches
     - **Validates: Requirements 13.3**
 
-  - [~] 2.11 Implement `ConfigViewer` in `packages/server/src/scanner/config-viewer.ts`
+  - [x] 2.11 Implement `ConfigViewer` in `packages/server/src/scanner/config-viewer.ts`
     - `readFile(filePath)` returning `FileViewResult` with content, size, lastModified, fileType, readable flag
     - Handle EACCES with `readable: false` and error message
     - _Requirements: 12.2, 12.3_
 
-  - [~] 2.12 Implement `Scanner` in `packages/server/src/scanner/scanner.ts`
+  - [x] 2.12 Implement `Scanner` in `packages/server/src/scanner/scanner.ts`
     - `fullScan()` — scan user-home, system, and project directories via all registered plugins
     - `scanUserSystem()` — scan only user-home and system configs
     - `scanProject(path)` — scan a single project
@@ -112,7 +112,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Generate random filesystem/PATH state per tool, verify autodiscovery detects exactly the correct tools with correct detection methods
     - **Validates: Requirements 2.5, 2.6, 2.7**
 
-- [ ] 3. Checkpoint — Core backend complete
+- [x] 3. Checkpoint — Core backend complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Plugin implementations
