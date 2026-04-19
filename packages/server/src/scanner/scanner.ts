@@ -73,7 +73,6 @@ export class Scanner {
             code: "EACCES",
           });
         }
-        // ENOENT or other — just skip
       }
       try {
         const artifacts = await plugin.discoverArtifacts(systemScope);
@@ -83,10 +82,30 @@ export class Scanner {
       }
     }
 
-    // Detect projects
-    const projects = await this.projectDetector.detectProjects(
+    // Detect projects from configured roots
+    const rootProjects = await this.projectDetector.detectProjects(
       this.projectRoots
     );
+
+    // Detect projects from tool session data (Claude, Codex, Continue)
+    let toolDataProjects: Project[] = [];
+    try {
+      toolDataProjects = await this.projectDetector.detectProjectsFromToolData();
+    } catch {
+      // Skip if tool data discovery fails
+    }
+
+    // Merge and deduplicate projects by path
+    const projectMap = new Map<string, Project>();
+    for (const project of rootProjects) {
+      projectMap.set(project.path, project);
+    }
+    for (const project of toolDataProjects) {
+      if (!projectMap.has(project.path)) {
+        projectMap.set(project.path, project);
+      }
+    }
+    const projects = Array.from(projectMap.values());
 
     // Scan each project
     for (const project of projects) {
@@ -116,6 +135,9 @@ export class Scanner {
         }
       }
     }
+
+    // Enrich projects with session data
+    this.enrichProjectsWithSessions(projects, allSessions);
 
     const result: ScanResult = {
       sessions: allSessions,
@@ -245,6 +267,57 @@ export class Scanner {
   }
 
   // ── Private helpers ──────────────────────────────────────
+
+  /**
+   * Enrich project objects with aggregated session data.
+   * Updates sessionCount, totalTokens, lastActivityAt, isActive, etc.
+   */
+  private enrichProjectsWithSessions(projects: Project[], sessions: Session[]): void {
+    // Group sessions by project path
+    const sessionsByPath = new Map<string, Session[]>();
+    for (const session of sessions) {
+      const existing = sessionsByPath.get(session.projectPath) ?? [];
+      existing.push(session);
+      sessionsByPath.set(session.projectPath, existing);
+    }
+
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    for (const project of projects) {
+      const projectSessions = sessionsByPath.get(project.path) ?? [];
+      project.sessionCount = projectSessions.length;
+      project.sessionsThisWeek = projectSessions.filter(
+        (s) => s.startedAt >= weekAgo
+      ).length;
+      project.totalTokens = projectSessions.reduce(
+        (sum, s) => sum + s.tokens.used, 0
+      );
+      project.estimatedCost = projectSessions.reduce(
+        (sum, s) => sum + s.estimatedCost, 0
+      );
+      project.netLines = {
+        additions: projectSessions.reduce((sum, s) => sum + s.netLines.additions, 0),
+        deletions: projectSessions.reduce((sum, s) => sum + s.netLines.deletions, 0),
+      };
+      project.isActive = projectSessions.some((s) => s.status === "active");
+
+      // Find the most recent session activity
+      if (projectSessions.length > 0) {
+        const latestSession = projectSessions.reduce((latest, s) =>
+          s.startedAt > latest.startedAt ? s : latest
+        );
+        project.lastActivityAt = latestSession.startedAt;
+      }
+
+      // Collect unique tool IDs from sessions (merge with detected tools)
+      const toolSet = new Set(project.tools);
+      for (const s of projectSessions) {
+        toolSet.add(s.toolId);
+      }
+      project.tools = Array.from(toolSet);
+    }
+  }
 
   private toScanError(
     path: string,

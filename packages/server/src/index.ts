@@ -19,7 +19,11 @@ const __dirname = dirname(__filename);
 const DEFAULT_CONFIG: AppConfig = {
   port: 4040,
   host: "127.0.0.1",
-  projectRoots: [join(homedir(), "work"), join(homedir(), "personal")],
+  projectRoots: [
+    join(homedir(), "work"),
+    join(homedir(), "personal"),
+    join(homedir(), "Documents"),
+  ],
   scanIntervalMs: 0,
   configPath: join(homedir(), ".agentspulse", "config.json"),
 };

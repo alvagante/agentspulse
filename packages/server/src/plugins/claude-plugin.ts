@@ -1,5 +1,6 @@
-import { readFile, readdir, stat } from "node:fs/promises";
-import { join, basename, dirname } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { join, basename } from "node:path";
+import { homedir } from "node:os";
 import type {
   ToolId,
   ArtifactCategory,
@@ -15,6 +16,15 @@ import {
 
 /**
  * Claude Code plugin — discovers Claude config, artifacts, and parses JSONL sessions.
+ *
+ * Claude Code stores sessions in ~/.claude/projects/{encoded-path}/*.jsonl
+ * where encoded-path replaces all `/` with `-`.
+ *
+ * JSONL entry types:
+ * - type: "system" — sessionId, cwd, timestamp, version
+ * - type: "user" — message.role: "user", message.content: [{type: "text", text}]
+ * - type: "assistant" — message.role: "assistant", message.model, message.usage, message.content (may include tool_use blocks)
+ * - type: "last-prompt" — lastPrompt, sessionId
  */
 export class ClaudePlugin extends BasePlugin {
   readonly id: ToolId = "claude";
@@ -41,20 +51,31 @@ export class ClaudePlugin extends BasePlugin {
     { relativePath: "CLAUDE.md", category: "steering", isDirectory: false },
   ];
 
-  /** Parse sessions from Claude's JSONL session files */
+  /**
+   * Encode a project path to the Claude projects directory format.
+   * Claude replaces all `/` with `-` in the absolute path.
+   * e.g. /Users/al/Documents/GITHUB/myproject → -Users-al-Documents-GITHUB-myproject
+   */
+  encodeProjectPath(projectPath: string): string {
+    return projectPath.replace(/\//g, "-");
+  }
+
+  /**
+   * Parse sessions from Claude's JSONL session files.
+   * Sessions live in ~/.claude/projects/{encoded-path}/*.jsonl
+   */
   override async parseSessions(projectPath: string): Promise<Session[]> {
     const sessions: Session[] = [];
-    const sessionsDir = join(projectPath, ".claude", "sessions");
+    const home = homedir();
+    const encodedPath = this.encodeProjectPath(projectPath);
+    const sessionsDir = join(home, ".claude", "projects", encodedPath);
 
     try {
       const entries = await readdir(sessionsDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (!entry.isFile()) continue;
+        if (!entry.isFile() || !entry.name.endsWith(".jsonl")) continue;
         const filePath = join(sessionsDir, entry.name);
-        if (!entry.name.endsWith(".jsonl") && !entry.name.endsWith(".json")) {
-          continue;
-        }
-        const session = await this.parseSessionFile(filePath);
+        const session = await this.parseSessionFile(filePath, projectPath);
         if (session) {
           sessions.push(session);
         }
@@ -66,8 +87,11 @@ export class ClaudePlugin extends BasePlugin {
     return sessions;
   }
 
-  /** Parse a single JSONL session file, extract Session fields */
-  override async parseSessionFile(filePath: string): Promise<Session | null> {
+  /**
+   * Parse a single Claude JSONL session file.
+   * Optionally accepts a projectPath override (used when called from parseSessions).
+   */
+  override async parseSessionFile(filePath: string, projectPath?: string): Promise<Session | null> {
     try {
       const content = await readFile(filePath, "utf-8");
       const lines = content.trim().split("\n").filter(Boolean);
@@ -83,114 +107,157 @@ export class ClaudePlugin extends BasePlugin {
       let startedAt: Date | null = null;
       let endedAt: Date | undefined;
       let status: Session["status"] = "done";
+      let sessionId = "";
+      let cwd = projectPath ?? "";
+      let version = "";
 
       for (const line of lines) {
         let entry: Record<string, unknown>;
         try {
           entry = JSON.parse(line);
         } catch {
-          continue; // Skip malformed lines
+          continue;
         }
 
-        const timestamp = entry.timestamp
-          ? new Date(entry.timestamp as string)
-          : new Date();
+        const type = entry.type as string | undefined;
+
+        // Extract timestamp from various locations
+        let timestamp: Date;
+        if (entry.timestamp) {
+          timestamp = new Date(typeof entry.timestamp === "number" ? entry.timestamp : entry.timestamp as string);
+        } else {
+          timestamp = new Date();
+        }
 
         if (!startedAt || timestamp < startedAt) startedAt = timestamp;
         if (!endedAt || timestamp > endedAt) endedAt = timestamp;
 
-        const type = entry.type as string | undefined;
-
-        if (type === "user_prompt" || type === "human") {
-          const text = (entry.text ?? entry.content ?? "") as string;
-          if (!title && text) title = text.slice(0, 100);
+        if (type === "system") {
+          // System entry: sessionId, cwd, timestamp, version
+          if (entry.sessionId) sessionId = entry.sessionId as string;
+          if (entry.cwd) cwd = entry.cwd as string;
+          if (entry.version) version = entry.version as string;
+        } else if (type === "user") {
+          // User message
           messageCount++;
-          events.push({ type: "user_prompt", timestamp, text });
-        } else if (type === "assistant_response" || type === "assistant") {
-          const text = (entry.text ?? entry.content ?? "") as string;
-          messageCount++;
-          events.push({ type: "assistant_response", timestamp, text });
-        } else if (type === "tool_call" || type === "tool_use") {
-          toolCallCount++;
-          const toolName = (entry.tool ?? entry.name ?? "unknown") as string;
-          const input = (entry.input ?? "") as string;
-          const output = (entry.output ?? undefined) as string | undefined;
-          events.push({
-            type: "tool_call",
-            timestamp,
-            toolName,
-            input: typeof input === "string" ? input : JSON.stringify(input),
-            output: output ? (typeof output === "string" ? output : JSON.stringify(output)) : undefined,
-            success: (entry.success as boolean) ?? true,
-          });
-        } else if (type === "file_edit") {
-          const fp = (entry.filePath ?? entry.file ?? "") as string;
-          const additions = (entry.additions ?? 0) as number;
-          const deletions = (entry.deletions ?? 0) as number;
-          const isNewFile = (entry.isNewFile ?? false) as boolean;
-          const existing = filesModified.get(fp);
-          if (existing) {
-            existing.additions += additions;
-            existing.deletions += deletions;
-          } else {
-            filesModified.set(fp, { filePath: fp, additions, deletions, isNewFile });
+          const message = entry.message as Record<string, unknown> | undefined;
+          let text = "";
+          if (message?.content) {
+            const contentArr = message.content as Array<Record<string, unknown>>;
+            if (Array.isArray(contentArr)) {
+              for (const block of contentArr) {
+                if (block.type === "text" && block.text) {
+                  text += (block.text as string) + "\n";
+                }
+              }
+            }
           }
-          events.push({
-            type: "file_edit",
-            timestamp,
-            filePath: fp,
-            additions,
-            deletions,
-            isNewFile,
-            diff: entry.diff as string | undefined,
-          });
-        } else if (type === "error") {
-          events.push({
-            type: "error",
-            timestamp,
-            message: (entry.message ?? "Unknown error") as string,
-            details: entry.details as string | undefined,
-          });
-          status = "error";
-        }
+          text = text.trim();
+          if (!title && text) title = text.slice(0, 100);
+          events.push({ type: "user_prompt", timestamp, text });
+        } else if (type === "assistant") {
+          // Assistant message — contains model, usage, and possibly tool_use blocks
+          messageCount++;
+          const message = entry.message as Record<string, unknown> | undefined;
+          if (message) {
+            if (message.model) model = message.model as string;
 
-        if (entry.model) model = entry.model as string;
-        if (entry.tokens) {
-          totalTokens += typeof entry.tokens === "number"
-            ? (entry.tokens as number)
-            : 0;
+            // Extract token usage
+            const usage = message.usage as Record<string, number> | undefined;
+            if (usage) {
+              const inputTokens = usage.input_tokens ?? 0;
+              const outputTokens = usage.output_tokens ?? 0;
+              totalTokens += inputTokens + outputTokens;
+            }
+
+            // Extract text and tool_use blocks from content
+            let assistantText = "";
+            const contentArr = message.content as Array<Record<string, unknown>> | undefined;
+            if (Array.isArray(contentArr)) {
+              for (const block of contentArr) {
+                if (block.type === "text" && block.text) {
+                  assistantText += (block.text as string) + "\n";
+                } else if (block.type === "tool_use") {
+                  toolCallCount++;
+                  const toolName = (block.name ?? "unknown") as string;
+                  const input = block.input as Record<string, unknown> | undefined;
+                  let inputStr = "";
+                  if (input) {
+                    // Try to extract a meaningful input string
+                    inputStr = input.file_path as string
+                      ?? input.command as string
+                      ?? input.pattern as string
+                      ?? JSON.stringify(input);
+                  }
+                  events.push({
+                    type: "tool_call",
+                    timestamp,
+                    toolName,
+                    input: inputStr,
+                    output: undefined,
+                    success: true,
+                  });
+
+                  // Track file modifications from Write/Edit tools
+                  if ((toolName === "Write" || toolName === "Edit") && input?.file_path) {
+                    const fp = input.file_path as string;
+                    if (!filesModified.has(fp)) {
+                      filesModified.set(fp, {
+                        filePath: fp,
+                        additions: 0,
+                        deletions: 0,
+                        isNewFile: toolName === "Write",
+                      });
+                    }
+                  }
+                }
+              }
+            }
+            assistantText = assistantText.trim();
+            events.push({ type: "assistant_response", timestamp, text: assistantText });
+          }
+        } else if (type === "last-prompt") {
+          // Use lastPrompt as title if we don't have one yet
+          const lastPrompt = entry.lastPrompt as string | undefined;
+          if (lastPrompt && !title) {
+            title = lastPrompt.slice(0, 100);
+          }
         }
+        // Skip other types: file-history-snapshot, attachment, etc.
       }
 
       if (!startedAt) return null;
 
+      const resolvedProjectPath = cwd || projectPath || "";
       const fileChanges = Array.from(filesModified.values());
       const netAdditions = fileChanges.reduce((s, f) => s + f.additions, 0);
       const netDeletions = fileChanges.reduce((s, f) => s + f.deletions, 0);
-      const durationMs = endedAt
-        ? endedAt.getTime() - startedAt.getTime()
-        : 0;
+      const durationMs = endedAt ? endedAt.getTime() - startedAt.getTime() : 0;
 
       return {
-        id: this.generateSessionId(filePath),
+        id: sessionId || this.generateSessionId(filePath),
         toolId: this.id,
         title: title || basename(filePath, ".jsonl"),
         status,
-        projectPath: dirname(dirname(dirname(filePath))), // up from .claude/sessions/file
-        projectName: basename(dirname(dirname(dirname(filePath)))),
+        projectPath: resolvedProjectPath,
+        projectName: basename(resolvedProjectPath),
         startedAt,
         endedAt,
         durationMs,
         model,
         tokens: { used: totalTokens, limit: 0 },
-        estimatedCost: totalTokens * 0.000003, // rough estimate
+        estimatedCost: totalTokens * 0.000003,
         messageCount,
         toolCallCount,
         filesModified: fileChanges,
         netLines: { additions: netAdditions, deletions: netDeletions },
         events,
         sourceFiles: [filePath],
-        config: { model, tools: [], systemPrompt: undefined },
+        config: {
+          model,
+          tools: [],
+          systemPrompt: undefined,
+        },
       };
     } catch {
       return null;
