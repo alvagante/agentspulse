@@ -354,7 +354,7 @@ Agents Pulse is a local web app that scans the developer's filesystem for AI cod
     - Rescan flow: trigger rescan, verify store updates
     - _Requirements: 3.1–3.6, 14.1–14.3_
 
-- [-] 16. Final checkpoint — All tests pass
+- [x] 16. Final checkpoint — All tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
