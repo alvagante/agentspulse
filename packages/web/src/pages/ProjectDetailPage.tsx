@@ -1,9 +1,11 @@
+import { useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useProject, type ProjectDetailResponse } from "../api/client";
+import { useProject, type ProjectDetailResponse, fetchArtifactView, fetchConfigView } from "../api/client";
 import StatCard from "../components/StatCard";
 import ToolTag from "../components/ToolTag";
 import Sparkline from "../components/Sparkline";
 import FileTree, { type FileTreeItem } from "../components/FileTree";
+import CodeViewer from "../components/CodeViewer";
 import { formatRelativeTime } from "../utils";
 import { TOOL_COLORS, TOOL_DISPLAY_NAMES, ARTIFACT_CATEGORY_LABELS } from "../constants";
 import type {
@@ -11,9 +13,11 @@ import type {
   SessionSummary,
   ToolBreakdownEntry,
   ToolArtifact,
+  ConfigFile,
   GitInfo,
   Dependency,
   ToolId,
+  FileViewResult,
 } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -75,6 +79,7 @@ export default function ProjectDetailPage() {
     sessions,
     toolBreakdown,
     artifacts,
+    configs,
     gitInfo,
     dependencies,
     activitySparkline,
@@ -127,7 +132,7 @@ export default function ProjectDetailPage() {
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <ToolBreakdownSection breakdown={toolBreakdown} />
-          <ConfigTreeSection project={project} />
+          <ConfigTreeSection project={project} configs={configs} />
           <ArtifactsSection artifacts={artifacts} />
           <DependenciesSection dependencies={dependencies} />
         </div>
@@ -487,47 +492,154 @@ function ToolBreakdownSection({ breakdown }: { breakdown: ToolBreakdownEntry[] }
 /*  Config File Tree                                                   */
 /* ------------------------------------------------------------------ */
 
-function ConfigTreeSection({ project }: { project: Project }) {
-  const treeItems = buildConfigTree(project);
+function ConfigTreeSection({ project, configs }: { project: Project; configs: ConfigFile[] }) {
+  const [viewData, setViewData] = useState<FileViewResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const openConfig = useCallback(async (path: string) => {
+    setLoading(true);
+    try {
+      const result = await fetchConfigView(path);
+      setViewData(result);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const treeItems = buildConfigTree(project.path, configs);
 
   if (treeItems.length === 0) return null;
 
   return (
-    <div
-      style={{
-        background: "var(--panel)",
-        border: "1px solid var(--border)",
-        borderRadius: 10,
-        padding: 16,
-      }}
-    >
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Config files present</h3>
-      <FileTree items={treeItems} />
-    </div>
+    <>
+      <div
+        style={{
+          background: "var(--panel)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: 16,
+        }}
+      >
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Config files present</h3>
+        <FileTree items={treeItems} onSelect={openConfig} />
+      </div>
+
+      {/* Config viewer modal */}
+      {(viewData || loading) && (
+        <div
+          onClick={() => setViewData(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 32,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--panel)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              width: "100%",
+              maxWidth: 800,
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--border)",
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 13,
+                  color: "var(--text-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {viewData?.path ?? "Loading…"}
+              </span>
+              <button
+                onClick={() => setViewData(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  color: "var(--text-muted)",
+                  lineHeight: 1,
+                  padding: "0 4px",
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ overflow: "auto", flexGrow: 1 }}>
+              {loading && (
+                <div style={{ padding: 24, color: "var(--text-muted)", textAlign: "center" }}>
+                  Loading…
+                </div>
+              )}
+              {viewData && !loading && (
+                viewData.readable ? (
+                  <CodeViewer
+                    content={viewData.content}
+                    path={viewData.path}
+                    fileType={viewData.fileType}
+                    size={viewData.size}
+                    lastModified={viewData.lastModified}
+                  />
+                ) : (
+                  <div style={{ padding: 24, color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                    {viewData.error ?? "File cannot be displayed."}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
-/**
- * Build a FileTreeItem[] from the project's tools.
- * Creates a top-level directory node for each tool's config dir.
- */
-function buildConfigTree(project: Project): FileTreeItem[] {
-  const toolDirMap: Record<string, string> = {
-    claude: ".claude",
-    kiro: ".kiro",
-    gemini: ".gemini",
-    opencode: ".opencode",
-    continue: ".continue",
-    codex: ".codex",
-    cline: ".cline",
-    openclaw: ".openclaw",
-    nemoclaw: ".nemoclaw",
-  };
+/** Build a FileTreeItem[] from real ConfigFile paths, grouped by parent directory. */
+function buildConfigTree(_projectPath: string, configs: ConfigFile[]): FileTreeItem[] {
+  // Group files by their immediate parent directory (full path)
+  const dirMap = new Map<string, FileTreeItem[]>();
 
-  return project.tools.map((toolId) => ({
-    name: `${toolDirMap[toolId] ?? `.${toolId}`}/`,
+  for (const c of configs) {
+    const parts = c.path.split("/");
+    const fileName = parts[parts.length - 1];
+    const dir = parts.slice(0, -1).join("/");
+
+    if (!dirMap.has(dir)) dirMap.set(dir, []);
+    dirMap.get(dir)!.push({ name: fileName, type: "file", path: c.path });
+  }
+
+  if (dirMap.size === 0) return [];
+
+  return Array.from(dirMap.entries()).map(([dir, files]) => ({
+    name: dir.split("/").pop()! + "/",
     type: "directory" as const,
-    children: [],
+    children: files,
   }));
 }
 
@@ -537,6 +649,19 @@ function buildConfigTree(project: Project): FileTreeItem[] {
 /* ------------------------------------------------------------------ */
 
 function ArtifactsSection({ artifacts }: { artifacts: ToolArtifact[] }) {
+  const [viewData, setViewData] = useState<FileViewResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const openArtifact = useCallback(async (path: string) => {
+    setLoading(true);
+    try {
+      const result = await fetchArtifactView(path);
+      setViewData(result);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   if (artifacts.length === 0) return null;
 
   // Group by toolId, then by category
@@ -549,54 +674,159 @@ function ArtifactsSection({ artifacts }: { artifacts: ToolArtifact[] }) {
   }
 
   return (
-    <div
-      style={{
-        background: "var(--panel)",
-        border: "1px solid var(--border)",
-        borderRadius: 10,
-        padding: 16,
-      }}
-    >
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Tool artifacts</h3>
-      {Array.from(byTool.entries()).map(([toolId, catMap]) => (
-        <div key={toolId} style={{ marginBottom: 12 }}>
-          <div style={{ marginBottom: 6 }}>
-            <ToolTag toolId={toolId} size="sm" />
+    <>
+      <div
+        style={{
+          background: "var(--panel)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: 16,
+        }}
+      >
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Tool artifacts</h3>
+        {Array.from(byTool.entries()).map(([toolId, catMap]) => (
+          <div key={toolId} style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 6 }}>
+              <ToolTag toolId={toolId} size="sm" />
+            </div>
+            {Array.from(catMap.entries()).map(([category, items]) => (
+              <div key={category} style={{ marginBottom: 8, paddingLeft: 8 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--text-muted)",
+                    textTransform: "uppercase",
+                    marginBottom: 4,
+                  }}
+                >
+                  {ARTIFACT_CATEGORY_LABELS[category] ?? category}
+                </div>
+                {items.map((item) => {
+                  const fileName = item.path.split("/").pop() ?? item.path;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => openArtifact(item.path)}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 12,
+                        color: "var(--color-kiro)",
+                        padding: "2px 0",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        textDecorationStyle: "dotted",
+                        textUnderlineOffset: 3,
+                      }}
+                    >
+                      {fileName}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
-          {Array.from(catMap.entries()).map(([category, items]) => (
-            <div key={category} style={{ marginBottom: 8, paddingLeft: 8 }}>
-              <div
+        ))}
+      </div>
+
+      {/* Artifact viewer modal */}
+      {(viewData || loading) && (
+        <div
+          onClick={() => setViewData(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 32,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--panel)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              width: "100%",
+              maxWidth: 800,
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--border)",
+                flexShrink: 0,
+              }}
+            >
+              <span
                 style={{
-                  fontSize: 11,
                   fontFamily: "var(--font-mono)",
+                  fontSize: 13,
                   color: "var(--text-muted)",
-                  textTransform: "uppercase",
-                  marginBottom: 4,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {ARTIFACT_CATEGORY_LABELS[category] ?? category}
-              </div>
-              {items.map((item) => {
-                const fileName = item.path.split("/").pop() ?? item.path;
-                return (
-                  <div
-                    key={item.path}
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      padding: "2px 0",
-                    }}
-                  >
-                    {fileName}
-                  </div>
-                );
-              })}
+                {viewData?.path ?? "Loading…"}
+              </span>
+              <button
+                onClick={() => setViewData(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  color: "var(--text-muted)",
+                  lineHeight: 1,
+                  padding: "0 4px",
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
             </div>
-          ))}
+            <div style={{ overflow: "auto", flexGrow: 1 }}>
+              {loading && (
+                <div style={{ padding: 24, color: "var(--text-muted)", textAlign: "center" }}>
+                  Loading…
+                </div>
+              )}
+              {viewData && !loading && (
+                viewData.readable ? (
+                  <CodeViewer
+                    content={viewData.content}
+                    path={viewData.path}
+                    fileType={viewData.fileType}
+                    size={viewData.size}
+                    lastModified={viewData.lastModified}
+                  />
+                ) : (
+                  <div style={{ padding: 24, color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                    {viewData.error ?? "File cannot be displayed."}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 

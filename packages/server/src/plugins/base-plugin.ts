@@ -1,4 +1,4 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { access, readdir, stat } from "node:fs/promises";
 import { join, extname, basename } from "node:path";
 import { homedir } from "node:os";
@@ -14,7 +14,7 @@ import type {
   ScanScope,
 } from "../types.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /** File type detection from extension */
 export function getFileType(
@@ -93,7 +93,7 @@ export abstract class BasePlugin implements ToolPlugin {
     // Check commands in PATH
     for (const cmd of this.commandNames) {
       try {
-        const { stdout } = await execAsync(`which ${cmd}`);
+        const { stdout } = await execFileAsync("which", [cmd]);
         const resolved = stdout.trim();
         if (resolved) {
           commandPath = resolved;

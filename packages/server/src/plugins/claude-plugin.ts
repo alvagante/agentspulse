@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
 import type {
@@ -227,6 +227,18 @@ export class ClaudePlugin extends BasePlugin {
       }
 
       if (!startedAt) return null;
+
+      // Detect active sessions: if the JSONL file was modified within the last
+      // 2 minutes, the session is likely still running (Claude writes continuously).
+      try {
+        const fileStat = await stat(filePath);
+        const ageMs = Date.now() - fileStat.mtimeMs;
+        if (ageMs < 2 * 60 * 1000) {
+          status = "active";
+        }
+      } catch {
+        // Can't stat — leave as "done"
+      }
 
       const resolvedProjectPath = cwd || projectPath || "";
       const fileChanges = Array.from(filesModified.values());

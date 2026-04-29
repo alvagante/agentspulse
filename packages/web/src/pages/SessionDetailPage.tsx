@@ -283,17 +283,16 @@ function Sidebar({
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: "flex-start",
               padding: "4px 0",
               fontSize: 12,
+              gap: 8,
             }}
           >
             <span
               style={{
                 fontFamily: "var(--font-mono)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                wordBreak: "break-all",
                 marginRight: 8,
               }}
             >

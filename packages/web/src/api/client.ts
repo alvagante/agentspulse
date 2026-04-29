@@ -81,6 +81,7 @@ export interface ProjectDetailResponse {
   sessions: SessionSummary[];
   toolBreakdown: ToolBreakdownEntry[];
   artifacts: ToolArtifact[];
+  configs: ConfigFile[];
   gitInfo: GitInfo | null;
   dependencies: Dependency[];
   activitySparkline: number[];

@@ -99,8 +99,8 @@ export function createApiRouter(deps: ApiDeps): Router {
       if (req.query.sortBy) filter.sortBy = req.query.sortBy as SessionFilter["sortBy"];
       if (req.query.sortOrder) filter.sortOrder = req.query.sortOrder as SessionFilter["sortOrder"];
 
-      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const page = Math.max(1, Math.min(parseInt(req.query.page as string, 10) || 1, 10_000));
+      const limit = Math.max(1, Math.min(parseInt(req.query.limit as string, 10) || 50, 100));
       filter.page = page;
       filter.limit = limit;
 
@@ -243,6 +243,8 @@ export function createApiRouter(deps: ApiDeps): Router {
       }
 
       const artifacts = store.getArtifacts({ projectPath: project.path });
+      const projectToolIds = new Set(project.tools);
+      const configs = store.getConfigs().filter((c) => projectToolIds.has(c.toolId as ToolId));
 
       res.json({
         project,
@@ -250,6 +252,7 @@ export function createApiRouter(deps: ApiDeps): Router {
         sessions,
         toolBreakdown,
         artifacts,
+        configs,
         gitInfo: project.gitInfo,
         dependencies: project.dependencies,
         activitySparkline,

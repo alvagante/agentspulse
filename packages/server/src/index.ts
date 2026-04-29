@@ -1,4 +1,6 @@
 import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -54,7 +56,11 @@ async function main(): Promise<void> {
   // Initialize store, scanner, config viewer
   const store = new SessionStore();
   const scanner = new Scanner(registry, store, config.projectRoots);
-  const configViewer = new ConfigViewer();
+  // Fix #1: restrict to known tool config dirs instead of entire home directory
+  const toolConfigBases = getAllPluginCandidates()
+    .flatMap((p) => p.configDirNames.map((d) => join(homedir(), d)));
+  const allowedBases = [...config.projectRoots, ...toolConfigBases];
+  const configViewer = new ConfigViewer(allowedBases);
 
   // Run initial full scan
   console.log("Running initial filesystem scan...");
@@ -68,7 +74,34 @@ async function main(): Promise<void> {
 
   // Create Express app
   const app = express();
+  app.use(helmet());
   app.use(express.json());
+
+  // Fix #2: DNS rebinding protection — reject requests with unexpected Host header
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const host = req.hostname;
+    if (host !== "127.0.0.1" && host !== "localhost") {
+      res.status(400).json({ error: "Bad Request" });
+      return;
+    }
+    next();
+  });
+
+  // Optional API key auth (set AGENTS_PULSE_API_KEY env var to enable)
+  const apiKey = process.env.AGENTS_PULSE_API_KEY;
+  if (apiKey) {
+    app.use("/api", (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (req.headers["x-api-key"] !== apiKey) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      next();
+    });
+  }
+
+  // Rate limiting
+  app.use("/api/rescan", rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false }));
+  app.use("/api", rateLimit({ windowMs: 60_000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
   // Mount API router
   const apiRouter = createApiRouter({ store, scanner, configViewer, registry });
