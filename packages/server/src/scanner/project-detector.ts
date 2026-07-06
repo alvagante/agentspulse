@@ -34,6 +34,18 @@ interface GooseProjectRow {
   working_dir: string;
 }
 
+interface ZedWorkspaceRow {
+  paths: string | null;
+}
+
+interface DevinSessionPathData {
+  projectPath?: string;
+  workspaceDirectory?: string;
+  workingDirectory?: string;
+  cwd?: string;
+  repoPath?: string;
+}
+
 /**
  * Identifies project directories and extracts metadata.
  */
@@ -80,6 +92,9 @@ export class ProjectDetector {
    * - ~/.gemini/projects.json path-to-slug map
    * - Cursor global composer headers and workspaceStorage metadata
    * - Goose sessions database working_dir values
+   * - Zed workspace database paths
+   * - Windsurf global composer headers and workspaceStorage metadata
+   * - Devin JSON/JSONL session working directories
    *
    * Returns deduplicated projects that exist on disk.
    */
@@ -95,6 +110,9 @@ export class ProjectDetector {
     await this.discoverGeminiProjects(home, discoveredPaths);
     await this.discoverCursorProjects(home, discoveredPaths);
     await this.discoverGooseProjects(home, discoveredPaths);
+    await this.discoverZedProjects(home, discoveredPaths);
+    await this.discoverWindsurfProjects(home, discoveredPaths);
+    await this.discoverDevinProjects(home, discoveredPaths);
 
     // Build Project objects for paths that exist on disk
     const projects: Project[] = [];
@@ -366,6 +384,143 @@ export class ProjectDetector {
     }
   }
 
+  /** Discover project paths from Zed workspace state */
+  private async discoverZedProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const dbPath = join(home, "Library", "Application Support", "Zed", "db", "0-stable", "db.sqlite");
+    try {
+      const rows = await querySqliteJson<ZedWorkspaceRow>(
+        dbPath,
+        `select paths from workspaces where paths is not null and paths != ''`
+      );
+      for (const row of rows) {
+        for (const projectPath of parsePathList(row.paths)) {
+          this.addDiscoveredPath(paths, projectPath, "zed");
+        }
+      }
+    } catch {
+      // No Zed workspace database
+    }
+  }
+
+  /** Discover project paths from Windsurf composer headers and workspace storage */
+  private async discoverWindsurfProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    for (const root of windsurfUserDirs(home)) {
+      await this.discoverWindsurfComposerProjects(root, paths);
+      await this.discoverWindsurfWorkspaceStorageProjects(root, paths);
+    }
+  }
+
+  private async discoverWindsurfComposerProjects(
+    root: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const stateDb = join(root, "globalStorage", "state.vscdb");
+    try {
+      const rows = await querySqliteJson<CursorComposerHeaderRow>(
+        stateDb,
+        `select cast(value as text) as value
+         from ItemTable
+         where key = 'composer.composerHeaders'`
+      );
+      const value = rows[0]?.value;
+      if (!value) return;
+
+      const parsed = JSON.parse(value) as CursorComposerHeaders;
+      for (const composer of parsed.allComposers ?? []) {
+        const uri = composer.workspaceIdentifier?.uri;
+        const projectPath = uri?.fsPath ?? uri?.path ?? uriToPath(uri?.external);
+        if (projectPath) this.addDiscoveredPath(paths, projectPath, "windsurf");
+      }
+    } catch {
+      // No readable Windsurf global state
+    }
+  }
+
+  private async discoverWindsurfWorkspaceStorageProjects(
+    root: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const workspaceStorage = join(root, "workspaceStorage");
+    try {
+      const entries = await readdir(workspaceStorage, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const workspaceJsonPath = join(workspaceStorage, entry.name, "workspace.json");
+        try {
+          const content = await readFile(workspaceJsonPath, "utf-8");
+          const data = JSON.parse(content) as { folder?: string };
+          const projectPath = uriToPath(data.folder);
+          if (projectPath) this.addDiscoveredPath(paths, projectPath, "windsurf");
+        } catch {
+          // No readable workspace metadata
+        }
+      }
+    } catch {
+      // No Windsurf workspace storage
+    }
+  }
+
+  /** Discover project paths from Devin JSON/JSONL session files */
+  private async discoverDevinProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const roots = [
+      join(home, ".devin", "sessions"),
+      join(home, ".devin", "history"),
+      join(home, "Library", "Application Support", "Devin", "sessions"),
+    ];
+    for (const root of roots) {
+      await this.discoverDevinSessionDir(root, paths);
+    }
+  }
+
+  private async discoverDevinSessionDir(
+    dirPath: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    try {
+      const entries = await readdir(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          await this.discoverDevinSessionDir(fullPath, paths);
+        } else if (entry.isFile() && (entry.name.endsWith(".json") || entry.name.endsWith(".jsonl"))) {
+          await this.extractProjectPathFromDevinFile(fullPath, paths);
+        }
+      }
+    } catch {
+      // No Devin session directory
+    }
+  }
+
+  private async extractProjectPathFromDevinFile(
+    filePath: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    try {
+      const content = await readFile(filePath, "utf-8");
+      const data = filePath.endsWith(".jsonl")
+        ? firstJsonlObject(content)
+        : (JSON.parse(content) as DevinSessionPathData);
+      const projectPath =
+        data.projectPath ??
+        data.workspaceDirectory ??
+        data.workingDirectory ??
+        data.cwd ??
+        data.repoPath;
+      if (projectPath) this.addDiscoveredPath(paths, projectPath, "devin");
+    } catch {
+      // Can't read or parse Devin session file
+    }
+  }
+
   /** Check if a single directory is a project (has at least one tool marker) */
   async isProject(dirPath: string): Promise<boolean> {
     const tools = await this.detectTools(dirPath);
@@ -530,5 +685,47 @@ function uriToPath(uri: string | undefined): string | undefined {
     return fileURLToPath(uri);
   } catch {
     return undefined;
+  }
+}
+
+function windsurfUserDirs(home: string): string[] {
+  return [
+    join(home, "Library", "Application Support", "Windsurf", "User"),
+    join(home, ".codeium", "windsurf"),
+    join(home, ".windsurf"),
+  ];
+}
+
+function parsePathList(value: string | null): string[] {
+  if (!value) return [];
+  const parsed = parseJsonValue(value);
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item): item is string => typeof item === "string" && item !== "");
+  }
+  return value.split("\n").filter(Boolean);
+}
+
+function firstJsonlObject(content: string): DevinSessionPathData {
+  for (const line of content.split("\n")) {
+    if (!line.trim()) continue;
+    const data = JSON.parse(line) as DevinSessionPathData;
+    if (
+      data.projectPath ||
+      data.workspaceDirectory ||
+      data.workingDirectory ||
+      data.cwd ||
+      data.repoPath
+    ) {
+      return data;
+    }
+  }
+  return {};
+}
+
+function parseJsonValue(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
   }
 }

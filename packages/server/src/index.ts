@@ -19,8 +19,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const DEFAULT_CONFIG: AppConfig = {
-  port: 4040,
-  host: "127.0.0.1",
+  port: parsePort(process.env.AGENTS_PULSE_PORT) ?? 4040,
+  host: process.env.AGENTS_PULSE_HOST ?? "127.0.0.1",
   projectRoots: [
     join(homedir(), "work"),
     join(homedir(), "personal"),
@@ -29,6 +29,12 @@ const DEFAULT_CONFIG: AppConfig = {
   scanIntervalMs: 0,
   configPath: join(homedir(), ".agentspulse", "config.json"),
 };
+
+function parsePort(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const port = Number.parseInt(value, 10);
+  return Number.isInteger(port) && port > 0 && port <= 65535 ? port : undefined;
+}
 
 async function loadConfig(): Promise<AppConfig> {
   const configPath = join(homedir(), ".agentspulse", "config.json");

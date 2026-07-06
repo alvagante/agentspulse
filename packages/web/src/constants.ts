@@ -13,6 +13,9 @@ export const TOOL_COLORS: Record<ToolId, string> = {
   nemoclaw: "#8a3a3a",
   cursor: "#2f7de1",
   goose: "#4f7f4f",
+  zed: "#7c5cff",
+  windsurf: "#00a6a6",
+  devin: "#4f46e5",
 };
 
 /** Human-readable display names for each tool */
@@ -28,6 +31,9 @@ export const TOOL_DISPLAY_NAMES: Record<ToolId, string> = {
   nemoclaw: "NemoClaw",
   cursor: "Cursor",
   goose: "Goose",
+  zed: "Zed",
+  windsurf: "Windsurf",
+  devin: "Devin",
 };
 
 /** Human-readable labels for artifact categories (Requirement 17.7) */

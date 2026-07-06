@@ -11,6 +11,9 @@ import { OpenClawPlugin } from "./openclaw-plugin.js";
 import { NemoClawPlugin } from "./nemoclaw-plugin.js";
 import { CursorPlugin } from "./cursor-plugin.js";
 import { GoosePlugin } from "./goose-plugin.js";
+import { ZedPlugin } from "./zed-plugin.js";
+import { WindsurfPlugin } from "./windsurf-plugin.js";
+import { DevinPlugin } from "./devin-plugin.js";
 
 export {
   ClaudePlugin,
@@ -24,6 +27,9 @@ export {
   NemoClawPlugin,
   CursorPlugin,
   GoosePlugin,
+  ZedPlugin,
+  WindsurfPlugin,
+  DevinPlugin,
 };
 
 /** Returns all plugin instances for autodiscovery */
@@ -40,6 +46,9 @@ export function getAllPluginCandidates(): ToolPlugin[] {
     new NemoClawPlugin(),
     new CursorPlugin(),
     new GoosePlugin(),
+    new ZedPlugin(),
+    new WindsurfPlugin(),
+    new DevinPlugin(),
   ];
 }
 

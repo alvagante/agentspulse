@@ -244,7 +244,17 @@ export function createApiRouter(deps: ApiDeps): Router {
 
       const artifacts = store.getArtifacts({ projectPath: project.path });
       const projectToolIds = new Set(project.tools);
-      const configs = store.getConfigs().filter((c) => projectToolIds.has(c.toolId as ToolId));
+      const projectPrefix = project.path.endsWith("/")
+        ? project.path
+        : `${project.path}/`;
+      const configMap = new Map<string, ReturnType<typeof store.getConfigs>[number]>();
+      for (const config of store.getConfigs()) {
+        if (!projectToolIds.has(config.toolId as ToolId)) continue;
+        if (config.scope !== "project") continue;
+        if (!config.path.startsWith(projectPrefix)) continue;
+        configMap.set(config.path, config);
+      }
+      const configs = Array.from(configMap.values());
 
       res.json({
         project,

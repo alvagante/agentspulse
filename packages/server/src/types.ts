@@ -14,7 +14,10 @@ export type ToolId =
   | "openclaw"
   | "nemoclaw"
   | "cursor"
-  | "goose";
+  | "goose"
+  | "zed"
+  | "windsurf"
+  | "devin";
 
 /** Session lifecycle status */
 export type SessionStatus = "active" | "done" | "error" | "archived";
