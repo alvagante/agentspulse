@@ -12,7 +12,9 @@ export type ToolId =
   | "codex"
   | "cline"
   | "openclaw"
-  | "nemoclaw";
+  | "nemoclaw"
+  | "cursor"
+  | "goose";
 
 export type SessionStatus = "active" | "done" | "error" | "archived";
 

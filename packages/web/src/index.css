@@ -26,6 +26,8 @@
   --color-cline: #8a6a3a;
   --color-openclaw: #3a3a8a;
   --color-nemoclaw: #8a3a3a;
+  --color-cursor: #2f7de1;
+  --color-goose: #4f7f4f;
 
   /* Status colors */
   --status-active: #2f6b3a;

@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type {
   Session,
   Project,
@@ -19,6 +20,8 @@ export class SessionStore {
   private configs: ConfigFile[] = [];
   private artifacts: ToolArtifact[] = [];
   private lastScanTime: Date | null = null;
+  /** Resolved paths of every discovered config/artifact — the only files the view endpoints may serve. */
+  private viewablePaths = new Set<string>();
 
   /** Replace all data from a scan result */
   update(result: ScanResult): void {
@@ -27,6 +30,20 @@ export class SessionStore {
     this.configs = result.configs;
     this.artifacts = result.artifacts;
     this.lastScanTime = result.scannedAt;
+    this.viewablePaths = new Set([
+      ...result.configs.map((c) => resolve(c.path)),
+      ...result.artifacts.map((a) => resolve(a.path)),
+    ]);
+  }
+
+  /**
+   * True only if the path is a config/artifact the scanner actually discovered.
+   * Gates the /view endpoints so they cannot be pointed at arbitrary paths;
+   * symlink following still works because the discovered path (the link itself)
+   * is what lives in this set.
+   */
+  isViewableFilePath(filePath: string): boolean {
+    return this.viewablePaths.has(resolve(filePath));
   }
 
   /** Query sessions with filters, sorting, and pagination */

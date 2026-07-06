@@ -10,5 +10,8 @@
     "start": "npm run start --workspace=packages/server",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "vite": "8.1.3"
   }
 }

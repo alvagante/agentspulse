@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { readFile, readdir, access, stat } from "node:fs/promises";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 import type {
   Project,
   ToolId,
@@ -11,6 +12,27 @@ import type {
 } from "../types.js";
 import type { PluginRegistry } from "../plugins/plugin-registry.js";
 import { TOOL_MARKERS } from "../constants.js";
+import { querySqliteJson } from "../sqlite.js";
+
+interface CursorComposerHeaderRow {
+  value: string | null;
+}
+
+interface CursorComposerHeaders {
+  allComposers?: Array<{
+    workspaceIdentifier?: {
+      uri?: {
+        fsPath?: string;
+        path?: string;
+        external?: string;
+      };
+    };
+  }>;
+}
+
+interface GooseProjectRow {
+  working_dir: string;
+}
 
 /**
  * Identifies project directories and extracts metadata.
@@ -55,30 +77,37 @@ export class ProjectDetector {
    * - ~/.claude/projects/ directory names (decode encoded paths)
    * - ~/.codex/sessions/ JSONL files for session_meta.payload.cwd
    * - ~/.continue/sessions/ JSON files for workspaceDirectory
+   * - ~/.gemini/projects.json path-to-slug map
+   * - Cursor global composer headers and workspaceStorage metadata
+   * - Goose sessions database working_dir values
    *
    * Returns deduplicated projects that exist on disk.
    */
   async detectProjectsFromToolData(): Promise<Project[]> {
-    const discoveredPaths = new Set<string>();
+    // Map from project path → set of tools that discovered it (for attribution
+    // when no local tool marker dir exists, e.g. Gemini projects).
+    const discoveredPaths = new Map<string, Set<ToolId>>();
     const home = homedir();
 
-    // 1. Discover from ~/.claude/projects/ directory names
     await this.discoverClaudeProjects(home, discoveredPaths);
-
-    // 2. Discover from ~/.codex/sessions/ JSONL files
     await this.discoverCodexProjects(home, discoveredPaths);
-
-    // 3. Discover from ~/.continue/sessions/ JSON files
     await this.discoverContinueProjects(home, discoveredPaths);
+    await this.discoverGeminiProjects(home, discoveredPaths);
+    await this.discoverCursorProjects(home, discoveredPaths);
+    await this.discoverGooseProjects(home, discoveredPaths);
 
     // Build Project objects for paths that exist on disk
     const projects: Project[] = [];
-    for (const dirPath of discoveredPaths) {
+    for (const [dirPath, attributedTools] of discoveredPaths) {
       try {
         await access(dirPath);
         const s = await stat(dirPath);
         if (!s.isDirectory()) continue;
-        const tools = await this.detectTools(dirPath);
+        // Merge local marker detection with tools attributed via session data
+        const detectedTools = await this.detectTools(dirPath);
+        const tools: ToolId[] = [
+          ...new Set([...detectedTools, ...attributedTools]),
+        ];
         const project = await this.buildProject(dirPath, tools);
         projects.push(project);
       } catch {
@@ -101,8 +130,21 @@ export class ProjectDetector {
     return encoded.replace(/-/g, "/");
   }
 
+  /** Add a path+tool attribution to the discovered paths map */
+  private addDiscoveredPath(
+    map: Map<string, Set<ToolId>>,
+    path: string,
+    toolId: ToolId
+  ): void {
+    if (!map.has(path)) map.set(path, new Set());
+    map.get(path)!.add(toolId);
+  }
+
   /** Discover project paths from ~/.claude/projects/ directory names */
-  private async discoverClaudeProjects(home: string, paths: Set<string>): Promise<void> {
+  private async discoverClaudeProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
     const projectsDir = join(home, ".claude", "projects");
     try {
       const entries = await readdir(projectsDir, { withFileTypes: true });
@@ -110,7 +152,7 @@ export class ProjectDetector {
         if (!entry.isDirectory()) continue;
         const decoded = this.decodeClaudeProjectPath(entry.name);
         if (decoded && decoded !== "/") {
-          paths.add(decoded);
+          this.addDiscoveredPath(paths, decoded, "claude");
         }
       }
     } catch {
@@ -119,7 +161,10 @@ export class ProjectDetector {
   }
 
   /** Discover project paths from ~/.codex/sessions/ JSONL files (session_meta.payload.cwd) */
-  private async discoverCodexProjects(home: string, paths: Set<string>): Promise<void> {
+  private async discoverCodexProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
     const sessionsDir = join(home, ".codex", "sessions");
     try {
       // Walk YYYY/MM/DD structure
@@ -153,17 +198,19 @@ export class ProjectDetector {
   }
 
   /** Extract cwd from the first line of a Codex session file */
-  private async extractCwdFromCodexFile(filePath: string, paths: Set<string>): Promise<void> {
+  private async extractCwdFromCodexFile(
+    filePath: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
     try {
       const content = await readFile(filePath, "utf-8");
-      // Only read the first line for session_meta
       const firstLine = content.split("\n")[0];
       if (!firstLine) return;
       const entry = JSON.parse(firstLine) as Record<string, unknown>;
       if (entry.type === "session_meta") {
         const payload = entry.payload as Record<string, unknown> | undefined;
         if (payload?.cwd && typeof payload.cwd === "string") {
-          paths.add(payload.cwd);
+          this.addDiscoveredPath(paths, payload.cwd, "codex");
         }
       }
     } catch {
@@ -172,7 +219,10 @@ export class ProjectDetector {
   }
 
   /** Discover project paths from ~/.continue/sessions/ JSON files (workspaceDirectory) */
-  private async discoverContinueProjects(home: string, paths: Set<string>): Promise<void> {
+  private async discoverContinueProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
     const sessionsDir = join(home, ".continue", "sessions");
     try {
       const entries = await readdir(sessionsDir, { withFileTypes: true });
@@ -182,8 +232,12 @@ export class ProjectDetector {
         try {
           const content = await readFile(filePath, "utf-8");
           const data = JSON.parse(content) as Record<string, unknown>;
-          if (data.workspaceDirectory && typeof data.workspaceDirectory === "string" && data.workspaceDirectory !== "") {
-            paths.add(data.workspaceDirectory);
+          if (
+            data.workspaceDirectory &&
+            typeof data.workspaceDirectory === "string" &&
+            data.workspaceDirectory !== ""
+          ) {
+            this.addDiscoveredPath(paths, data.workspaceDirectory, "continue");
           }
         } catch {
           // Can't read or parse
@@ -191,6 +245,124 @@ export class ProjectDetector {
       }
     } catch {
       // No sessions directory
+    }
+  }
+
+  /** Discover project paths from ~/.gemini/projects.json */
+  private async discoverGeminiProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const projectsJsonPath = join(home, ".gemini", "projects.json");
+    try {
+      const content = await readFile(projectsJsonPath, "utf-8");
+      const data = JSON.parse(content) as {
+        projects?: Record<string, string>;
+      };
+      if (data.projects) {
+        for (const projectPath of Object.keys(data.projects)) {
+          if (projectPath) this.addDiscoveredPath(paths, projectPath, "gemini");
+        }
+      }
+    } catch {
+      // No projects.json
+    }
+  }
+
+  /** Discover project paths from Cursor composer headers and workspace storage */
+  private async discoverCursorProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    await this.discoverCursorComposerProjects(home, paths);
+    await this.discoverCursorWorkspaceStorageProjects(home, paths);
+  }
+
+  private async discoverCursorComposerProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const stateDb = join(
+      home,
+      "Library",
+      "Application Support",
+      "Cursor",
+      "User",
+      "globalStorage",
+      "state.vscdb"
+    );
+
+    try {
+      const rows = await querySqliteJson<CursorComposerHeaderRow>(
+        stateDb,
+        `select cast(value as text) as value
+         from ItemTable
+         where key = 'composer.composerHeaders'`
+      );
+      const value = rows[0]?.value;
+      if (!value) return;
+
+      const parsed = JSON.parse(value) as CursorComposerHeaders;
+      for (const composer of parsed.allComposers ?? []) {
+        const uri = composer.workspaceIdentifier?.uri;
+        const projectPath = uri?.fsPath ?? uri?.path ?? uriToPath(uri?.external);
+        if (projectPath) this.addDiscoveredPath(paths, projectPath, "cursor");
+      }
+    } catch {
+      // No Cursor global state DB or unreadable composer headers
+    }
+  }
+
+  private async discoverCursorWorkspaceStorageProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const workspaceStorage = join(
+      home,
+      "Library",
+      "Application Support",
+      "Cursor",
+      "User",
+      "workspaceStorage"
+    );
+
+    try {
+      const entries = await readdir(workspaceStorage, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const workspaceJsonPath = join(workspaceStorage, entry.name, "workspace.json");
+        try {
+          const content = await readFile(workspaceJsonPath, "utf-8");
+          const data = JSON.parse(content) as { folder?: string };
+          const projectPath = uriToPath(data.folder);
+          if (projectPath) this.addDiscoveredPath(paths, projectPath, "cursor");
+        } catch {
+          // No readable workspace metadata
+        }
+      }
+    } catch {
+      // No Cursor workspace storage
+    }
+  }
+
+  /** Discover project paths from Goose sessions.db working_dir values */
+  private async discoverGooseProjects(
+    home: string,
+    paths: Map<string, Set<ToolId>>
+  ): Promise<void> {
+    const dbPath = join(home, ".local", "share", "goose", "sessions", "sessions.db");
+    try {
+      const rows = await querySqliteJson<GooseProjectRow>(
+        dbPath,
+        `select distinct working_dir
+         from sessions
+         where working_dir is not null and working_dir != ''`
+      );
+      for (const row of rows) {
+        this.addDiscoveredPath(paths, row.working_dir, "goose");
+      }
+    } catch {
+      // No Goose sessions database
     }
   }
 
@@ -348,5 +520,15 @@ export class ProjectDetector {
       hash |= 0;
     }
     return Math.abs(hash).toString(36);
+  }
+}
+
+function uriToPath(uri: string | undefined): string | undefined {
+  if (!uri) return undefined;
+  if (!uri.startsWith("file://")) return uri;
+  try {
+    return fileURLToPath(uri);
+  } catch {
+    return undefined;
   }
 }

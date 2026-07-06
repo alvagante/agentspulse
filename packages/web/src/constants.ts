@@ -11,6 +11,8 @@ export const TOOL_COLORS: Record<ToolId, string> = {
   cline: "#8a6a3a",
   openclaw: "#3a3a8a",
   nemoclaw: "#8a3a3a",
+  cursor: "#2f7de1",
+  goose: "#4f7f4f",
 };
 
 /** Human-readable display names for each tool */
@@ -24,6 +26,8 @@ export const TOOL_DISPLAY_NAMES: Record<ToolId, string> = {
   cline: "Cline",
   openclaw: "OpenClaw",
   nemoclaw: "NemoClaw",
+  cursor: "Cursor",
+  goose: "Goose",
 };
 
 /** Human-readable labels for artifact categories (Requirement 17.7) */

@@ -291,6 +291,10 @@ export function createApiRouter(deps: ApiDeps): Router {
         res.status(400).json({ error: "Missing required query parameter: path" });
         return;
       }
+      if (!store.isViewableFilePath(filePath)) {
+        res.status(403).json({ error: "File not available for viewing" });
+        return;
+      }
       const result = await configViewer.readFile(filePath);
       res.json(result);
     } catch (err) {
@@ -319,6 +323,10 @@ export function createApiRouter(deps: ApiDeps): Router {
       const filePath = req.query.path as string;
       if (!filePath) {
         res.status(400).json({ error: "Missing required query parameter: path" });
+        return;
+      }
+      if (!store.isViewableFilePath(filePath)) {
+        res.status(403).json({ error: "File not available for viewing" });
         return;
       }
       const result = await configViewer.readFile(filePath);

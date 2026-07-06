@@ -237,8 +237,23 @@ export abstract class BasePlugin implements ToolPlugin {
         if (entry.isDirectory()) {
           const subFiles = await this.walkDir(fullPath);
           files.push(...subFiles);
-        } else if (entry.isFile()) {
+          continue;
+        }
+
+        if (entry.isFile()) {
           files.push(fullPath);
+          continue;
+        }
+
+        if (entry.isSymbolicLink()) {
+          try {
+            const s = await stat(fullPath);
+            if (s.isFile()) {
+              files.push(fullPath);
+            }
+          } catch {
+            // Broken symlink or inaccessible target — skip
+          }
         }
       }
     } catch {

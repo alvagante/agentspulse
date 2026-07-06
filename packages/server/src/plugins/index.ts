@@ -9,6 +9,8 @@ import { CodexPlugin } from "./codex-plugin.js";
 import { ClinePlugin } from "./cline-plugin.js";
 import { OpenClawPlugin } from "./openclaw-plugin.js";
 import { NemoClawPlugin } from "./nemoclaw-plugin.js";
+import { CursorPlugin } from "./cursor-plugin.js";
+import { GoosePlugin } from "./goose-plugin.js";
 
 export {
   ClaudePlugin,
@@ -20,9 +22,11 @@ export {
   ClinePlugin,
   OpenClawPlugin,
   NemoClawPlugin,
+  CursorPlugin,
+  GoosePlugin,
 };
 
-/** Returns all 9 plugin instances for autodiscovery */
+/** Returns all plugin instances for autodiscovery */
 export function getAllPluginCandidates(): ToolPlugin[] {
   return [
     new ClaudePlugin(),
@@ -34,10 +38,12 @@ export function getAllPluginCandidates(): ToolPlugin[] {
     new ClinePlugin(),
     new OpenClawPlugin(),
     new NemoClawPlugin(),
+    new CursorPlugin(),
+    new GoosePlugin(),
   ];
 }
 
-/** Instantiates all 9 plugins and registers them with the registry */
+/** Instantiates all plugins and registers them with the registry */
 export function registerAllPlugins(registry: PluginRegistry): void {
   const plugins = getAllPluginCandidates();
   for (const plugin of plugins) {

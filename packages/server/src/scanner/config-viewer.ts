@@ -1,5 +1,5 @@
 import { readFile as fsReadFile, stat, realpath } from "node:fs/promises";
-import { extname, resolve, relative } from "node:path";
+import { extname, isAbsolute, resolve, relative } from "node:path";
 import type { FileViewResult } from "../types.js";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
@@ -15,22 +15,34 @@ export class ConfigViewer {
     this.allowedBases = allowedBases.map((b) => resolve(b));
   }
 
-  private async assertSafePath(filePath: string): Promise<void> {
-    let abs: string;
-    try {
-      abs = await realpath(filePath);
-    } catch {
-      // File doesn't exist — fall back to lexical resolve so ENOENT is handled downstream
-      abs = resolve(filePath);
-    }
+  private isAllowedPath(filePath: string): boolean {
+    const abs = resolve(filePath);
     const allowed = this.allowedBases.some(
-      (base) => !relative(base, abs).startsWith("..")
+      (base) => {
+        const rel = relative(base, abs);
+        return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+      }
     );
-    if (!allowed) {
-      throw Object.assign(new Error("Path outside allowed directories"), {
-        code: "EPERM",
-      });
+
+    return allowed;
+  }
+
+  private async assertSafePath(filePath: string): Promise<void> {
+    if (this.isAllowedPath(filePath)) {
+      return;
     }
+
+    try {
+      if (this.isAllowedPath(await realpath(filePath))) {
+        return;
+      }
+    } catch {
+      // File doesn't exist; lexical validation above is enough to decide safety.
+    }
+
+    throw Object.assign(new Error("Path outside allowed directories"), {
+      code: "EPERM",
+    });
   }
 
   async readFile(filePath: string): Promise<FileViewResult> {

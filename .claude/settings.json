@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/al/Documents/GITHUB/agentspulse diff --stat)",
+      "Bash(npx vitest *)"
+    ]
+  }
+}
